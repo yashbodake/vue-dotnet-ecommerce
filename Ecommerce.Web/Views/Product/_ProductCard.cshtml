@@ -1,0 +1,36 @@
+@model Ecommerce.Core.Models.Product
+@{
+    var inStock = Model.Stock > 0;
+    var imageUrl = string.IsNullOrWhiteSpace(Model.ThumbnailUrl)
+        ? Url.Content("~/Content/images/placeholder.svg")
+        : Url.Content("~" + (Model.ThumbnailUrl.StartsWith("/") ? Model.ThumbnailUrl : "/" + Model.ThumbnailUrl));
+}
+
+<article class="product-card">
+    <a class="product-card-media" href="@Url.Action("Detail", "Product", new { id = Model.ProductId })">
+        <img src="@imageUrl" alt="@Model.Name" onerror="this.src='@Url.Content("~/Content/images/placeholder.svg")';" />
+    </a>
+    <div class="product-card-body">
+        <h3>
+            <a href="@Url.Action("Detail", "Product", new { id = Model.ProductId })">@Model.Name</a>
+        </h3>
+        @if (!string.IsNullOrWhiteSpace(Model.CategoryName))
+        {
+            <p class="product-category">@Model.CategoryName</p>
+        }
+        <p class="product-price">@Model.Price.ToString("C")</p>
+        @if (inStock)
+        {
+            <button type="button"
+                    class="btn add-to-cart-btn"
+                    data-product-id="@Model.ProductId"
+                    data-quantity="1">
+                Add to Cart
+            </button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-disabled" disabled="disabled">Out of Stock</button>
+        }
+    </div>
+</article>

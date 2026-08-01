@@ -1,0 +1,117 @@
+@model Ecommerce.Core.ViewModels.ProductDetailViewModel
+@{
+    ViewBag.Title = Model.Product.Name;
+    var inStock = Model.Product.Stock > 0;
+    var images = Model.Images != null && Model.Images.Count > 0
+        ? Model.Images
+        : new List<Ecommerce.Core.Models.ProductImage>
+        {
+            new Ecommerce.Core.Models.ProductImage
+            {
+                Url = string.IsNullOrWhiteSpace(Model.Product.ThumbnailUrl)
+                    ? "/Content/images/placeholder.svg"
+                    : Model.Product.ThumbnailUrl,
+                DisplayOrder = 0
+            }
+        };
+}
+
+<article class="product-detail">
+    <p><a href="@Url.Action("Index", "Product")">&larr; Back to catalog</a></p>
+
+    <div class="detail-layout">
+        <div class="detail-gallery">
+            @foreach (var image in images.OrderBy(i => i.DisplayOrder))
+            {
+                var src = image.Url.StartsWith("/") || image.Url.StartsWith("http")
+                    ? (image.Url.StartsWith("http") ? image.Url : Url.Content("~" + image.Url))
+                    : Url.Content("~/" + image.Url);
+                <a href="@src" data-fancybox="product-gallery" data-caption="@Model.Product.Name">
+                    <img src="@src" alt="@Model.Product.Name" onerror="this.src='@Url.Content("~/Content/images/placeholder.svg")';" />
+                </a>
+            }
+        </div>
+
+        <div class="detail-info">
+            <h1>@Model.Product.Name</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Product.CategoryName))
+            {
+                <p class="product-category">@Model.Product.CategoryName</p>
+            }
+            <p class="product-price">@Model.Product.Price.ToString("C")</p>
+            <p>@(Model.Product.Description ?? "No description available.")</p>
+            <p class="stock-line">@(inStock ? Model.Product.Stock + " in stock" : "Out of stock")</p>
+
+            <div class="detail-actions">
+                @if (Model.Variants != null && Model.Variants.Count > 0)
+                {
+                    <label>
+                        Variant
+                        <select id="detail-variant" name="variantId">
+                            @foreach (var variant in Model.Variants)
+                            {
+                                <option value="@variant.ProductVariantId"
+                                        data-stock="@variant.Stock"
+                                        data-adjustment="@variant.PriceAdjustment"
+                                        @(variant.ProductVariantId == Model.SelectedVariantId ? "selected=\"selected\"" : null)>
+                                    @variant.Name
+                                    @if (variant.PriceAdjustment != 0)
+                                    {
+                                        @:(@(variant.PriceAdjustment > 0 ? "+" : "")@variant.PriceAdjustment.ToString("C"))
+                                    }
+                                </option>
+                            }
+                        </select>
+                    </label>
+                }
+
+                <label>
+                    Qty
+                    <input type="number" id="detail-qty" min="1" value="1" @(inStock ? null : "disabled=\"disabled\"") />
+                </label>
+
+                @if (inStock)
+                {
+                    <button type="button"
+                            class="btn add-to-cart-btn"
+                            id="detail-add-to-cart"
+                            data-product-id="@Model.Product.ProductId"
+                            data-quantity="1">
+                        Add to Cart
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-disabled" disabled="disabled">Out of Stock</button>
+                }
+            </div>
+        </div>
+    </div>
+</article>
+
+@section Scripts {
+<script>
+$(function () {
+    if (window.Fancybox) {
+        Fancybox.bind('[data-fancybox="product-gallery"]', {});
+    }
+
+    var $btn = $('#detail-add-to-cart');
+    var $qty = $('#detail-qty');
+    var $variant = $('#detail-variant');
+
+    function syncQtyData() {
+        if ($btn.length) {
+            $btn.data('quantity', parseInt($qty.val(), 10) || 1);
+            if ($variant.length) {
+                $btn.data('variant-id', $variant.val());
+            }
+        }
+    }
+
+    $qty.on('change', syncQtyData);
+    $variant.on('change', syncQtyData);
+    syncQtyData();
+});
+</script>
+}

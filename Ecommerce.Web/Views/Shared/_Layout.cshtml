@@ -1,19 +1,65 @@
+@{
+    var fancyCss = "https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css";
+    var fancyJs = "https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js";
+}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title - Legacy Ecommerce</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="@fancyCss" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/site.css")" />
 </head>
 <body>
-    <header>
-        <strong>Legacy Ecommerce</strong>
-        | <a href="@Url.Action("Index", "Home")">Home</a>
-        | <a href="@Url.Action("Index", "Test")">DI Smoke Test</a>
+    @Html.AntiForgeryToken()
+    <header class="site-header">
+        <div class="site-brand">
+            <a href="@Url.Action("Index", "Product")">Legacy Ecommerce</a>
+        </div>
+        <nav class="site-nav">
+            <a href="@Url.Action("Index", "Product")">Catalog</a>
+            <a href="@Url.Action("Index", "Cart")">Cart</a>
+            <span id="mini-cart-container">@Html.Action("MiniCart", "Cart")</span>
+            @if (Request.IsAuthenticated)
+            {
+                <a href="@Url.Action("Orders", "Account")">My Orders</a>
+                <span class="nav-user">@User.Identity.Name</span>
+                using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { @class = "inline-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="link-button">Log off</button>
+                }
+            }
+            else
+            {
+                <a href="@Url.Action("Register", "Account")">Register</a>
+                <a href="@Url.Action("Login", "Account")">Log in</a>
+            }
+        </nav>
     </header>
-    <hr />
-    <main>
+    <main class="site-main">
         @RenderBody()
     </main>
+    <footer class="site-footer">
+        <p>.NET Framework 4.7.2 · ASP.NET MVC 5 · Spec-driven build</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="@fancyJs"></script>
+    <script>
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        if (token) {
+            $.ajaxSetup({
+                headers: { 'RequestVerificationToken': token }
+            });
+        }
+    </script>
+    <script src="@Url.Content("~/Scripts/cart.js")"></script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

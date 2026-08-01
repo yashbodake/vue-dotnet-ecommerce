@@ -9,6 +9,7 @@ namespace Ecommerce.Core.Interfaces
         /// <summary>Spec 01 smoke-test helper — counts products in the catalog.</summary>
         int GetProductCount();
 
+        IEnumerable<Category> GetCategories();
         IEnumerable<Product> GetByCategory(int categoryId);
         ProductDetailViewModel GetDetail(int productId);
         PagedResult<Product> Filter(ProductFilterCriteria criteria);

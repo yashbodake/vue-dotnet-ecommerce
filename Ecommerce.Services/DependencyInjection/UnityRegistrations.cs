@@ -15,6 +15,7 @@ namespace Ecommerce.Services.DependencyInjection
         {
             container.RegisterType<EcommerceEntities>(new HierarchicalLifetimeManager());
             container.RegisterType(typeof(IRepository<>), typeof(Repository<>));
+            container.RegisterType<IProductRepository, ProductRepository>();
             container.RegisterType<IProductService, ProductService>();
             container.RegisterType<ICartService, CartService>();
             container.RegisterType<IOrderService, OrderService>();

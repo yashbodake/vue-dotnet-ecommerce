@@ -1,0 +1,46 @@
+@model Ecommerce.Web.Models.CheckoutViewModel
+@{
+    ViewBag.Title = "Checkout — Shipping";
+    var cart = ViewBag.Cart as Ecommerce.Core.ViewModels.CartViewModel;
+}
+
+<section class="checkout-page">
+    @Html.Partial("_Steps", Model)
+
+    <div class="checkout-layout">
+        <div class="account-panel">
+            <h1>Shipping method</h1>
+            <p class="muted">Delivering to: @Model.FormattedShippingAddress</p>
+
+            @using (Html.BeginForm("Shipping", "Checkout", FormMethod.Post, new { id = "checkout-shipping-form", @class = "account-form" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="form-group">
+                    <label class="filter-check">
+                        @Html.RadioButtonFor(m => m.ShippingMethod, "Standard (3–5 days)", new { id = "ship-standard" })
+                        Standard (3–5 days) — Free
+                    </label>
+                    <label class="filter-check">
+                        @Html.RadioButtonFor(m => m.ShippingMethod, "Express (1–2 days)", new { id = "ship-express" })
+                        Express (1–2 days)
+                    </label>
+                    @Html.ValidationMessageFor(m => m.ShippingMethod, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="cart-actions">
+                    <a href="@Url.Action("Address")" class="btn" style="background:#667085">Back</a>
+                    <button type="submit" class="btn">Continue to payment</button>
+                </div>
+            }
+        </div>
+
+        @Html.Partial("_OrderSummary", cart)
+    </div>
+</section>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+}

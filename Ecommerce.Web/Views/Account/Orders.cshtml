@@ -1,0 +1,55 @@
+@model IEnumerable<Ecommerce.Core.Models.Order>
+@{
+    ViewBag.Title = "My Orders";
+}
+
+<section class="account-panel">
+    <h1>My Orders</h1>
+
+    @if (Model == null || !Model.Any())
+    {
+        <p class="muted">You have no orders yet.</p>
+        <p><a class="btn" href="@Url.Action("Index", "Product")">Browse catalog</a></p>
+    }
+    else
+    {
+        <table id="orders-table" class="cart-table display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td>@order.OrderId</td>
+                        <td data-order="@order.OrderDate.ToString("yyyy-MM-dd HH:mm:ss")">@order.OrderDate.ToString("g")</td>
+                        <td>@order.Status</td>
+                        <td>@order.TotalAmount.ToString("C")</td>
+                        <td><a href="@Url.Action("OrderDetail", "Account", new { id = order.OrderId })">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script>
+    $(function () {
+        if ($('#orders-table').length) {
+            $('#orders-table').DataTable({
+                order: [[1, 'desc']],
+                pageLength: 10
+            });
+        }
+    });
+</script>
+}

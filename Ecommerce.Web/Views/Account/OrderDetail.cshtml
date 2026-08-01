@@ -1,0 +1,40 @@
+@model Ecommerce.Core.Models.Order
+@{
+    ViewBag.Title = "Order #" + Model.OrderId;
+}
+
+<section class="account-panel">
+    <p><a href="@Url.Action("Orders")">&larr; Back to orders</a></p>
+    <h1>Order #@Model.OrderId</h1>
+    <p><strong>Date:</strong> @Model.OrderDate.ToString("g")</p>
+    <p><strong>Status:</strong> @Model.Status</p>
+    <p><strong>Ship to:</strong> @Model.ShippingAddress</p>
+
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit price</th>
+                <th>Line total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@(item.ProductName ?? ("Product #" + item.ProductId))</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@((item.UnitPrice * item.Quantity).ToString("C"))</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="cart-total-label">Total</td>
+                <td class="cart-total">@Model.TotalAmount.ToString("C")</td>
+            </tr>
+        </tfoot>
+    </table>
+</section>

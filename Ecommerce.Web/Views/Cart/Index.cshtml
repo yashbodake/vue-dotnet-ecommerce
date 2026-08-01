@@ -1,0 +1,140 @@
+@model Ecommerce.Core.ViewModels.CartViewModel
+@{
+    ViewBag.Title = "Shopping Cart";
+}
+
+<section class="cart-page">
+    <h1>Shopping Cart</h1>
+
+    @if (Model == null || Model.Lines == null || Model.Lines.Count == 0)
+    {
+        <p class="muted">Your cart is empty.</p>
+        <p><a class="btn" href="@Url.Action("Index", "Product")">Continue shopping</a></p>
+    }
+    else
+    {
+        <table class="cart-table" id="cart-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit price</th>
+                    <th>Qty</th>
+                    <th>Line total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr data-cart-item-id="@line.CartItemId" class="cart-row">
+                        <td>
+                            <strong>@line.ProductName</strong>
+                            @if (!string.IsNullOrWhiteSpace(line.VariantName))
+                            {
+                                <div class="muted">@line.VariantName</div>
+                            }
+                        </td>
+                        <td class="unit-price">@line.UnitPrice.ToString("C")</td>
+                        <td>
+                            <input type="number"
+                                   class="cart-qty"
+                                   min="1"
+                                   value="@line.Quantity"
+                                   data-cart-item-id="@line.CartItemId" />
+                        </td>
+                        <td class="line-total">@line.LineTotal.ToString("C")</td>
+                        <td>
+                            <button type="button" class="btn btn-danger cart-remove" data-cart-item-id="@line.CartItemId">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="cart-total-label">Total</td>
+                    <td colspan="2" class="cart-total" id="cart-grand-total">@Model.Total.ToString("C")</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="cart-actions">
+            <a class="btn" href="@Url.Action("Index", "Product")">Continue shopping</a>
+            <a class="btn" href="@Url.Action("Address", "Checkout")">Proceed to checkout</a>
+        </div>
+    }
+</section>
+
+@section Scripts {
+<script>
+$(function () {
+    var token = $('input[name="__RequestVerificationToken"]').val();
+
+    function money(n) {
+        return '$' + Number(n).toFixed(2);
+    }
+
+    function refreshMiniCart() {
+        $('#mini-cart-container').load('@Url.Action("MiniCart", "Cart")');
+    }
+
+    $(document).on('change', '.cart-qty', function () {
+        var $input = $(this);
+        var cartItemId = $input.data('cart-item-id');
+        var quantity = parseInt($input.val(), 10) || 1;
+        $.ajax({
+            url: '@Url.Action("UpdateQuantity", "Cart")',
+            type: 'POST',
+            data: {
+                cartItemId: cartItemId,
+                quantity: quantity,
+                __RequestVerificationToken: token
+            },
+            success: function (result) {
+                if (!result.success) {
+                    alert(result.message || 'Could not update quantity');
+                    return;
+                }
+                var $row = $input.closest('tr');
+                if (result.removed) {
+                    $row.remove();
+                } else {
+                    $row.find('.line-total').text(money(result.lineTotal));
+                }
+                $('#cart-grand-total').text(money(result.total));
+                refreshMiniCart();
+                if ($('#cart-table tbody tr').length === 0) {
+                    location.reload();
+                }
+            }
+        });
+    });
+
+    $(document).on('click', '.cart-remove', function () {
+        var cartItemId = $(this).data('cart-item-id');
+        var $row = $(this).closest('tr');
+        $.ajax({
+            url: '@Url.Action("RemoveItem", "Cart")',
+            type: 'POST',
+            data: {
+                cartItemId: cartItemId,
+                __RequestVerificationToken: token
+            },
+            success: function (result) {
+                if (!result.success) {
+                    alert(result.message || 'Could not remove item');
+                    return;
+                }
+                $row.remove();
+                $('#cart-grand-total').text(money(result.total));
+                refreshMiniCart();
+                if ($('#cart-table tbody tr').length === 0) {
+                    location.reload();
+                }
+            }
+        });
+    });
+});
+</script>
+}
