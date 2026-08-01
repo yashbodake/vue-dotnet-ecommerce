@@ -62,7 +62,7 @@
     <section class="catalog-results">
         <h1>Products</h1>
         <div id="product-grid">
-            <p class="muted">Loading products…</p>
+            @Html.Partial("_ProductList", Model.InitialResults)
         </div>
     </section>
 </div>
@@ -95,8 +95,6 @@ $(function () {
         var page = $(this).data('page');
         loadProducts(page);
     });
-
-    loadProducts(1);
 });
 </script>
 }

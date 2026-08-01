@@ -120,6 +120,11 @@ namespace Ecommerce.Web.Controllers
                 return RedirectToAction("Address");
             }
 
+            if (state.ShippingMethod != "Standard" && state.ShippingMethod != "Express")
+            {
+                state.ShippingMethod = "Standard";
+            }
+
             ViewBag.Cart = CurrentCart();
             ViewBag.Step = 2;
             return View(state);
@@ -150,7 +155,9 @@ namespace Ecommerce.Web.Controllers
             ModelState.Remove("CardExpiry");
             ModelState.Remove("CardCvv");
 
-            if (string.IsNullOrWhiteSpace(model.ShippingMethod))
+            // Accept only known codes (labels in the view; avoids Unicode dash encoding issues)
+            var method = (model.ShippingMethod ?? string.Empty).Trim();
+            if (method != "Standard" && method != "Express")
             {
                 ModelState.AddModelError("ShippingMethod", "Choose a shipping method.");
             }
@@ -165,12 +172,13 @@ namespace Ecommerce.Web.Controllers
                 model.State = state.State;
                 model.PostalCode = state.PostalCode;
                 model.Country = state.Country;
+                model.ShippingMethod = method == "Express" ? "Express" : "Standard";
                 ViewBag.Cart = CurrentCart();
                 ViewBag.Step = 2;
                 return View(model);
             }
 
-            state.ShippingMethod = model.ShippingMethod;
+            state.ShippingMethod = method;
             state.CompletedStep = Math.Max(state.CompletedStep, 2);
             SaveState(state);
 

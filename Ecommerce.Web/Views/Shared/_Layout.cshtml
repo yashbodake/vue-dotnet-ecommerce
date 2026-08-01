@@ -1,7 +1,3 @@
-@{
-    var fancyCss = "https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css";
-    var fancyJs = "https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js";
-}
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title - Legacy Ecommerce</title>
     @Styles.Render("~/Content/css")
-    <link rel="stylesheet" href="@fancyCss" />
+    @RenderSection("Styles", required: false)
 </head>
 <body>
     @Html.AntiForgeryToken()
@@ -20,7 +16,7 @@
         <nav class="site-nav">
             <a href="@Url.Action("Index", "Product")">Catalog</a>
             <a href="@Url.Action("Index", "Cart")">Cart</a>
-            <span id="mini-cart-container">@Html.Action("MiniCart", "Cart")</span>
+            <span id="mini-cart-container">@Html.Partial("_MiniCart", (int)(ViewBag.MiniCartCount ?? 0))</span>
             @if (Request.IsAuthenticated)
             {
                 if (User.IsInRole("Admin"))
@@ -51,7 +47,6 @@
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
-    <script src="@fancyJs"></script>
     <script>
         var token = $('input[name="__RequestVerificationToken"]').val();
         if (token) {

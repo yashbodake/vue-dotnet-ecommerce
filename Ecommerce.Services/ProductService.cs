@@ -33,17 +33,20 @@ namespace Ecommerce.Services
 
         public IEnumerable<CoreCategory> GetCategories()
         {
-            // Only categories that currently have active products (keeps filters meaningful after reseeds)
-            var activeCategoryIds = _productRepository.Query()
-                .Where(p => p.IsActive)
-                .Select(p => p.CategoryId)
+            // Single query: distinct categories that have at least one active product
+            return _productRepository.Query()
+                .Where(p => p.IsActive && p.Category != null)
+                .Select(p => new
+                {
+                    p.Category.CategoryId,
+                    p.Category.Name,
+                    p.Category.ParentCategoryId,
+                    p.Category.DisplayOrder
+                })
                 .Distinct()
-                .ToList();
-
-            return _categoryRepository.GetAll()
-                .Where(c => activeCategoryIds.Contains(c.CategoryId))
                 .OrderBy(c => c.DisplayOrder)
                 .ThenBy(c => c.Name)
+                .ToList()
                 .Select(c => new CoreCategory
                 {
                     CategoryId = c.CategoryId,

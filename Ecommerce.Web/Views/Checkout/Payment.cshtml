@@ -15,8 +15,8 @@
     <div class="checkout-layout">
         <div class="account-panel">
             <h1>Payment</h1>
-            <p class="muted">Demo checkout only — no real card charges.</p>
-            <p class="muted">Ship via <strong>@Model.ShippingMethod</strong> to @Model.FormattedShippingAddress</p>
+            <p class="muted">Demo checkout only - no real card charges.</p>
+            <p class="muted">Ship via <strong>@(Model.ShippingMethod == "Express" ? "Express (1-2 days)" : "Standard (3-5 days)")</strong> to @Model.FormattedShippingAddress</p>
 
             @using (Html.BeginForm("PlaceOrder", "Checkout", FormMethod.Post, new { id = "checkout-payment-form", @class = "account-form" }))
             {

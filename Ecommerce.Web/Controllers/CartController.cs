@@ -23,14 +23,15 @@ namespace Ecommerce.Web.Controllers
         // No [HttpGet] — child actions during POST (e.g. failed PlaceOrder) must still render.
         public ActionResult MiniCart()
         {
-            var cart = _cartService.GetCart(CurrentUserId());
-            return PartialView("_MiniCart", cart);
+            var count = _cartService.GetItemCount(CurrentUserId());
+            return PartialView("_MiniCart", count);
         }
 
         [HttpGet]
         public ActionResult Index()
         {
             var cart = _cartService.GetCart(CurrentUserId());
+            ViewBag.MiniCartCount = cart.ItemCount;
             return View(cart);
         }
 

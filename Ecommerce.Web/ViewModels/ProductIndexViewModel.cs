@@ -7,5 +7,6 @@ namespace Ecommerce.Web.ViewModels
     {
         public IList<Category> Categories { get; set; } = new List<Category>();
         public ProductFilterCriteria Criteria { get; set; } = new ProductFilterCriteria();
+        public PagedResult<Product> InitialResults { get; set; }
     }
 }

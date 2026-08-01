@@ -1,0 +1,6 @@
+@model int
+
+<a class="mini-cart" href="@Url.Action("Index", "Cart")" title="View cart">
+    Cart
+    <span class="mini-cart-badge" id="mini-cart-badge">@Model</span>
+</a>

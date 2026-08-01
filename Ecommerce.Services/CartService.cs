@@ -33,6 +33,7 @@ namespace Ecommerce.Services
             }
 
             var items = _context.CartItems
+                .AsNoTracking()
                 .Include(c => c.Product)
                 .Include(c => c.ProductVariant)
                 .Where(c => c.UserId == userId)
@@ -51,6 +52,19 @@ namespace Ecommerce.Services
             }
 
             return cart;
+        }
+
+        public int GetItemCount(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return 0;
+            }
+
+            return _context.CartItems
+                .Where(c => c.UserId == userId)
+                .Select(c => (int?)c.Quantity)
+                .Sum() ?? 0;
         }
 
         public void AddItem(string userId, int productId, int? variantId, int quantity)

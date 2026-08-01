@@ -16,6 +16,10 @@
         };
 }
 
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@("fancyapps")/ui@5.0/dist/fancybox/fancybox.css" />
+}
+
 <article class="product-detail">
     <p><a href="@Url.Action("Index", "Product")">&larr; Back to catalog</a></p>
 
@@ -90,6 +94,7 @@
 </article>
 
 @section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/@("fancyapps")/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <script>
 $(function () {
     if (window.Fancybox) {

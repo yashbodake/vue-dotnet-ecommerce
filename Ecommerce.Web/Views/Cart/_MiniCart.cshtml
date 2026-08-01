@@ -1,9 +1,0 @@
-@model Ecommerce.Core.ViewModels.CartViewModel
-@{
-    var count = Model != null ? Model.ItemCount : 0;
-}
-
-<a class="mini-cart" href="@Url.Action("Index", "Cart")" title="View cart">
-    Cart
-    <span class="mini-cart-badge" id="mini-cart-badge">@count</span>
-</a>

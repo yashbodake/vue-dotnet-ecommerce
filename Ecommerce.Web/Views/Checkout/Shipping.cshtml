@@ -1,7 +1,8 @@
 @model Ecommerce.Web.Models.CheckoutViewModel
 @{
-    ViewBag.Title = "Checkout — Shipping";
+    ViewBag.Title = "Checkout - Shipping";
     var cart = ViewBag.Cart as Ecommerce.Core.ViewModels.CartViewModel;
+    var method = Model.ShippingMethod ?? "Standard";
 }
 
 <section class="checkout-page">
@@ -19,12 +20,12 @@
 
                 <div class="form-group">
                     <label class="filter-check">
-                        @Html.RadioButtonFor(m => m.ShippingMethod, "Standard (3–5 days)", new { id = "ship-standard" })
-                        Standard (3–5 days) — Free
+                        <input type="radio" name="ShippingMethod" id="ship-standard" value="Standard" @if (method == "Standard") { <text>checked="checked"</text> } />
+                        Standard (3-5 days) - Free
                     </label>
                     <label class="filter-check">
-                        @Html.RadioButtonFor(m => m.ShippingMethod, "Express (1–2 days)", new { id = "ship-express" })
-                        Express (1–2 days)
+                        <input type="radio" name="ShippingMethod" id="ship-express" value="Express" @if (method == "Express") { <text>checked="checked"</text> } />
+                        Express (1-2 days)
                     </label>
                     @Html.ValidationMessageFor(m => m.ShippingMethod, "", new { @class = "text-danger" })
                 </div>

@@ -20,10 +20,12 @@ namespace Ecommerce.Web.Controllers
         // GET: / or /Product
         public ActionResult Index()
         {
+            var criteria = new ProductFilterCriteria();
             var model = new ProductIndexViewModel
             {
                 Categories = _productService.GetCategories().ToList(),
-                Criteria = new ProductFilterCriteria()
+                Criteria = criteria,
+                InitialResults = _productService.Filter(criteria)
             };
             return View(model);
         }
