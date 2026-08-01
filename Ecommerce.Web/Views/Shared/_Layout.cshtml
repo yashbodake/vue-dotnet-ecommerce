@@ -8,9 +8,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title - Legacy Ecommerce</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+    @Styles.Render("~/Content/css")
     <link rel="stylesheet" href="@fancyCss" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/site.css")" />
 </head>
 <body>
     @Html.AntiForgeryToken()
@@ -50,10 +49,8 @@
         <p>.NET Framework 4.7.2 · ASP.NET MVC 5 · Spec-driven build</p>
     </footer>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-            crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
     <script src="@fancyJs"></script>
     <script>
         var token = $('input[name="__RequestVerificationToken"]').val();
@@ -63,7 +60,7 @@
             });
         }
     </script>
-    <script src="@Url.Content("~/Scripts/cart.js")"></script>
+    @Scripts.Render("~/bundles/site")
     @RenderSection("Scripts", required: false)
 </body>
 </html>

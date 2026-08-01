@@ -1,0 +1,19 @@
+@model System.Web.Mvc.HandleErrorInfo
+@{
+    ViewBag.Title = "Error";
+}
+
+<section class="account-panel">
+    <h1>Something went wrong</h1>
+    <p class="muted">An unexpected error occurred. Please try again, or return to the catalog.</p>
+    @if (Model != null && HttpContext.Current != null && HttpContext.Current.IsDebuggingEnabled)
+    {
+        <details>
+            <summary>Debug details</summary>
+            <p><strong>Controller:</strong> @Model.ControllerName</p>
+            <p><strong>Action:</strong> @Model.ActionName</p>
+            <p><strong>Exception:</strong> @(Model.Exception != null ? Model.Exception.Message : "")</p>
+        </details>
+    }
+    <p><a class="btn" href="@Url.Action("Index", "Product")">Back to catalog</a></p>
+</section>
