@@ -173,7 +173,7 @@ def apply_sql(sql_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=30, help="How many DummyJSON products to import")
+    parser.add_argument("--limit", type=int, default=194, help="How many DummyJSON products to import (API total is 194)")
     parser.add_argument("--apply", action="store_true", help="Run SQLCMD against .\\SQLEXPRESS after writing SQL")
     args = parser.parse_args()
 
