@@ -1,14 +1,25 @@
 @model Ecommerce.Core.Models.Product
 @{
     var inStock = Model.Stock > 0;
-    var imageUrl = string.IsNullOrWhiteSpace(Model.ThumbnailUrl)
-        ? Url.Content("~/Content/images/placeholder.svg")
-        : Url.Content("~" + (Model.ThumbnailUrl.StartsWith("/") ? Model.ThumbnailUrl : "/" + Model.ThumbnailUrl));
+    string imageUrl;
+    if (string.IsNullOrWhiteSpace(Model.ThumbnailUrl))
+    {
+        imageUrl = Url.Content("~/Content/images/placeholder.svg");
+    }
+    else if (Model.ThumbnailUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+          || Model.ThumbnailUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        imageUrl = Model.ThumbnailUrl;
+    }
+    else
+    {
+        imageUrl = Url.Content("~" + (Model.ThumbnailUrl.StartsWith("/") ? Model.ThumbnailUrl : "/" + Model.ThumbnailUrl));
+    }
 }
 
 <article class="product-card">
     <a class="product-card-media" href="@Url.Action("Detail", "Product", new { id = Model.ProductId })">
-        <img src="@imageUrl" alt="@Model.Name" onerror="this.src='@Url.Content("~/Content/images/placeholder.svg")';" />
+        <img src="@imageUrl" alt="@Model.Name" loading="lazy" onerror="this.src='@Url.Content("~/Content/images/placeholder.svg")';" />
     </a>
     <div class="product-card-body">
         <h3>
