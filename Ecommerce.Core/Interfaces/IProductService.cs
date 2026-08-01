@@ -1,0 +1,16 @@
+using System.Collections.Generic;
+using Ecommerce.Core.Models;
+using Ecommerce.Core.ViewModels;
+
+namespace Ecommerce.Core.Interfaces
+{
+    public interface IProductService
+    {
+        /// <summary>Spec 01 smoke-test helper — counts products in the catalog.</summary>
+        int GetProductCount();
+
+        IEnumerable<Product> GetByCategory(int categoryId);
+        ProductDetailViewModel GetDetail(int productId);
+        PagedResult<Product> Filter(ProductFilterCriteria criteria);
+    }
+}

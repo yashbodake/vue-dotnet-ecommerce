@@ -1,0 +1,32 @@
+## Visual Studio / MSBuild
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.dbmdl
+*.jfm
+
+## NuGet
+packages/
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+## Tools / local
+.tools/
+*.log
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Secrets / local config
+*.pfx
+appsettings.*.local.json
+**/Web.config.local
