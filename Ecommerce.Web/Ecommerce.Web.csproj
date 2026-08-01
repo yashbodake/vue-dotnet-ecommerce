@@ -144,9 +144,13 @@
     <Compile Include="Startup.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\CheckoutController.cs" />
+    <Compile Include="Controllers\AdminController.cs" />
+    <Compile Include="Filters\AuthorizeAdminAttribute.cs" />
+    <Compile Include="App_Start\AdminSeed.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\CheckoutViewModel.cs" />
+    <Compile Include="Models\AdminProductViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
@@ -176,6 +180,10 @@
     <Content Include="Views\Checkout\Confirmation.cshtml" />
     <Content Include="Views\Checkout\_Steps.cshtml" />
     <Content Include="Views\Checkout\_OrderSummary.cshtml" />
+    <Content Include="Views\Admin\Products.cshtml" />
+    <Content Include="Views\Admin\CreateProduct.cshtml" />
+    <Content Include="Views\Admin\EditProduct.cshtml" />
+    <Content Include="Views\Admin\Orders.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

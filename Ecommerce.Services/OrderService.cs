@@ -162,5 +162,50 @@ namespace Ecommerce.Services
 
             return EntityMapper.ToCore(order);
         }
+
+        public IEnumerable<CoreOrder> GetAllOrders(string statusFilter = null)
+        {
+            var query = _context.Orders
+                .Include(o => o.OrderItems.Select(i => i.Product))
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(statusFilter))
+            {
+                var status = statusFilter.Trim();
+                query = query.Where(o => o.Status == status);
+            }
+
+            return query
+                .OrderByDescending(o => o.OrderDate)
+                .ToList()
+                .Select(EntityMapper.ToCore)
+                .ToList();
+        }
+
+        public CoreOrder UpdateOrderStatus(int orderId, string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                throw new ArgumentException("Status is required.", nameof(status));
+            }
+
+            var allowed = new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" };
+            var normalized = status.Trim();
+            if (!allowed.Contains(normalized))
+            {
+                throw new InvalidOperationException("Invalid order status.");
+            }
+
+            var order = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
+            if (order == null)
+            {
+                throw new InvalidOperationException("Order not found.");
+            }
+
+            order.Status = normalized;
+            _orderRepository.Update(order);
+            _orderRepository.Save();
+            return EntityMapper.ToCore(order);
+        }
     }
 }

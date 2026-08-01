@@ -149,5 +149,115 @@ namespace Ecommerce.Services
                 PageSize = pageSize
             };
         }
+
+        public IEnumerable<CoreProduct> GetAllForAdmin()
+        {
+            return _productRepository.Query()
+                .Include(p => p.Category)
+                .OrderByDescending(p => p.IsActive)
+                .ThenBy(p => p.Name)
+                .ToList()
+                .Select(EntityMapper.ToCore)
+                .ToList();
+        }
+
+        public CoreProduct GetByIdForAdmin(int productId)
+        {
+            var entity = _productRepository.Query()
+                .Include(p => p.Category)
+                .FirstOrDefault(p => p.ProductId == productId);
+            return entity == null ? null : EntityMapper.ToCore(entity);
+        }
+
+        public CoreProduct CreateProduct(CoreProduct product)
+        {
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            ValidateProduct(product);
+
+            var entity = new Ecommerce.Data.Product
+            {
+                CategoryId = product.CategoryId,
+                Name = product.Name.Trim(),
+                Description = product.Description,
+                Price = product.Price,
+                ThumbnailUrl = string.IsNullOrWhiteSpace(product.ThumbnailUrl) ? null : product.ThumbnailUrl.Trim(),
+                Stock = product.Stock,
+                IsActive = product.IsActive,
+                CreatedDate = DateTime.Now
+            };
+
+            _productRepository.Add(entity);
+            _productRepository.Save();
+            return EntityMapper.ToCore(entity);
+        }
+
+        public CoreProduct UpdateProduct(CoreProduct product)
+        {
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            ValidateProduct(product);
+
+            var entity = _productRepository.GetById(product.ProductId);
+            if (entity == null)
+            {
+                throw new InvalidOperationException("Product not found.");
+            }
+
+            entity.CategoryId = product.CategoryId;
+            entity.Name = product.Name.Trim();
+            entity.Description = product.Description;
+            entity.Price = product.Price;
+            entity.ThumbnailUrl = string.IsNullOrWhiteSpace(product.ThumbnailUrl) ? null : product.ThumbnailUrl.Trim();
+            entity.Stock = product.Stock;
+            entity.IsActive = product.IsActive;
+
+            _productRepository.Update(entity);
+            _productRepository.Save();
+            return EntityMapper.ToCore(entity);
+        }
+
+        public void SoftDeleteProduct(int productId)
+        {
+            var entity = _productRepository.GetById(productId);
+            if (entity == null)
+            {
+                throw new InvalidOperationException("Product not found.");
+            }
+
+            // Soft-delete only — never hard-delete (OrderItem FK integrity).
+            entity.IsActive = false;
+            _productRepository.Update(entity);
+            _productRepository.Save();
+        }
+
+        private static void ValidateProduct(CoreProduct product)
+        {
+            if (string.IsNullOrWhiteSpace(product.Name))
+            {
+                throw new ArgumentException("Product name is required.");
+            }
+
+            if (product.CategoryId <= 0)
+            {
+                throw new ArgumentException("Category is required.");
+            }
+
+            if (product.Price < 0)
+            {
+                throw new ArgumentException("Price cannot be negative.");
+            }
+
+            if (product.Stock < 0)
+            {
+                throw new ArgumentException("Stock cannot be negative.");
+            }
+        }
     }
 }

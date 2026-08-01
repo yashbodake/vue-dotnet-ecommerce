@@ -10,6 +10,7 @@ namespace Ecommerce.Web
         public void Configuration(IAppBuilder app)
         {
             ConfigureAuth(app);
+            AdminSeed.EnsureAdminUser();
         }
     }
 }

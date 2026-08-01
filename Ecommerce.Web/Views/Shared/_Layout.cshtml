@@ -24,6 +24,10 @@
             <span id="mini-cart-container">@Html.Action("MiniCart", "Cart")</span>
             @if (Request.IsAuthenticated)
             {
+                if (User.IsInRole("Admin"))
+                {
+                    <a href="@Url.Action("Products", "Admin")">Admin</a>
+                }
                 <a href="@Url.Action("Orders", "Account")">My Orders</a>
                 <span class="nav-user">@User.Identity.Name</span>
                 using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { @class = "inline-form" }))

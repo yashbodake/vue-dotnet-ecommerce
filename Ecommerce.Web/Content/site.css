@@ -444,6 +444,57 @@ a:hover { text-decoration: underline; }
     margin-bottom: 0;
 }
 
+.admin-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.admin-header h1 {
+    margin: 0;
+}
+
+.admin-ok {
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    color: #1b5e20;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+}
+
+.admin-inactive {
+    opacity: 0.65;
+}
+
+.admin-row-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-filter .form-control,
+.admin-status-select {
+    display: inline-block;
+    width: auto;
+    min-width: 9rem;
+    margin-left: 0.35rem;
+}
+
+.admin-status-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .checkout-alert {
     background: #fdecea;
     border: 1px solid #f5c2c0;
