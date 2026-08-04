@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { reactive, watch, onMounted } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 
@@ -90,6 +90,12 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const localQuantities = reactive<Record<number, number>>({})
+
+// Fetch the full cart when the page loads so a direct visit to /cart
+// shows current contents, not just the badge count from App.vue.
+onMounted(() => {
+  cartStore.fetchCart(authStore.isAuthenticated)
+})
 
 watch(
   () => cartStore.items,

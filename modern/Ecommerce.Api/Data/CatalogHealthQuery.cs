@@ -7,7 +7,7 @@ namespace Ecommerce.Api.Data;
 /// </summary>
 public static class CatalogHealthQuery
 {
-    public const string Sql = "SELECT COUNT(*) FROM Products";
+    public const string Sql = "SELECT COUNT(*) FROM dbo.Product WHERE IsActive = 1";
 
     public static int Execute(IDbConnection connection)
     {
