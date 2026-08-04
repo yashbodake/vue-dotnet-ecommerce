@@ -15,23 +15,58 @@
       <p class="stock" :class="{ out: product.stock <= 0 }">
         {{ product.stock > 0 ? `In stock (${product.stock})` : 'Out of stock' }}
       </p>
+      <button
+        type="button"
+        class="add-button"
+        :disabled="product.stock <= 0 || adding"
+        @click.stop="addToCart"
+      >
+        {{ feedbackText }}
+      </button>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 import type { Product } from '../api/catalog'
 
 const props = defineProps<{ product: Product }>()
 const router = useRouter()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
+
+const adding = ref(false)
+const added = ref(false)
 
 const formattedPrice = computed(() =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
     props.product.price,
   ),
 )
+
+const feedbackText = computed(() => {
+  if (props.product.stock <= 0) return 'Out of stock'
+  if (added.value) return 'Added!'
+  return 'Add to Cart'
+})
+
+async function addToCart(): Promise<void> {
+  if (props.product.stock <= 0 || adding.value) return
+  adding.value = true
+  try {
+    await cartStore.addItem(props.product.productId, 1, undefined, authStore.isAuthenticated)
+    added.value = true
+    setTimeout(() => {
+      added.value = false
+    }, 1200)
+  } finally {
+    adding.value = false
+  }
+}
 
 function goToDetail(): void {
   router.push(`/products/${props.product.productId}`)
@@ -99,5 +134,24 @@ function goToDetail(): void {
 }
 .stock.out {
   color: #dc2626;
+}
+
+.add-button {
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.add-button:hover:not(:disabled) {
+  background: #374151;
+}
+.add-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

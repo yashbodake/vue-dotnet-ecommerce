@@ -4,6 +4,10 @@
       <RouterLink to="/" class="brand">Ecommerce Modern</RouterLink>
 
       <div class="nav-right">
+        <RouterLink to="/cart" class="cart-link">
+          Cart
+          <span v-if="cartStore.itemCount > 0" class="badge">{{ cartStore.itemCount }}</span>
+        </RouterLink>
         <template v-if="authStore.isAuthenticated">
           <span class="user">{{ authStore.email }}</span>
           <button type="button" class="logout" @click="onLogout">Sign out</button>
@@ -21,14 +25,22 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { useCartStore } from './stores/cart'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
+
+onMounted(() => {
+  cartStore.fetchCount(authStore.isAuthenticated)
+})
 
 function onLogout(): void {
   authStore.logout()
+  cartStore.clear()
   router.push('/login')
 }
 </script>
@@ -67,7 +79,8 @@ function onLogout(): void {
 }
 
 .logout,
-.login-link {
+.login-link,
+.cart-link {
   border: 1px solid var(--border, #e5e4e7);
   border-radius: 0.3rem;
   padding: 0.35rem 0.75rem;
@@ -76,6 +89,26 @@ function onLogout(): void {
   font: inherit;
   cursor: pointer;
   text-decoration: none;
+}
+
+.cart-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--accent, #aa3bff);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .content {

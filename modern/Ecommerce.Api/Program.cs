@@ -21,6 +21,9 @@ builder.Services.AddSingleton<ISqlConnectionFactory>(sp =>
 // Register catalog service
 builder.Services.AddSingleton<ProductCatalogService>();
 
+// Register cart service
+builder.Services.AddSingleton<CartService>();
+
 // Register auth service with JWT settings
 builder.Services.AddSingleton(sp =>
 {
@@ -115,6 +118,9 @@ app.MapGet("/api/health", (ISqlConnectionFactory connectionFactory) =>
 
 // Map catalog endpoints
 app.MapCatalogEndpoints();
+
+// Map cart endpoints
+app.MapCartEndpoints();
 
 // Map auth endpoints
 app.MapAuthEndpoints();

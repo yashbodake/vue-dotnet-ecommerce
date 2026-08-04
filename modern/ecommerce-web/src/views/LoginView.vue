@@ -41,9 +41,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useCartStore } from '../stores/cart'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 // Demo convenience pre-fill.
 const email = ref('admin@legacy.local')
@@ -56,6 +58,8 @@ async function onSubmit(): Promise<void> {
   submitting.value = true
   try {
     await authStore.login(email.value, password.value)
+    await cartStore.mergeOnLogin()
+    await cartStore.fetchCart(true)
     router.push('/')
   } catch (e) {
     const message = e && typeof e === 'object' && 'message' in e

@@ -89,3 +89,13 @@ export function get<T>(path: string, auth = false): Promise<T> {
 export function post<T>(path: string, body?: unknown, auth = false): Promise<T> {
   return request<T>(path, { method: 'POST', body, auth })
 }
+
+/** Issue a PUT request with a JSON body, optionally authenticated. */
+export function put<T>(path: string, body?: unknown, auth = false): Promise<T> {
+  return request<T>(path, { method: 'PUT', body, auth })
+}
+
+/** Issue a DELETE request, optionally authenticated. */
+export function del<T>(path: string, auth = false): Promise<T> {
+  return request<T>(path, { method: 'DELETE', auth })
+}

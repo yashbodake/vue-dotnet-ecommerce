@@ -38,6 +38,53 @@
           <p class="stock" :class="{ out: detail.product.stock <= 0 }">
             {{ detail.product.stock > 0 ? `In stock (${detail.product.stock})` : 'Out of stock' }}
           </p>
+
+          <div class="add-to-cart">
+            <div v-if="detail.variants.length > 0" class="field">
+              <label for="variant-select">Variant</label>
+              <select
+                id="variant-select"
+                v-model.number="selectedVariantId"
+                :disabled="adding"
+              >
+                <option :value="undefined">Select a variant</option>
+                <option
+                  v-for="variant in detail.variants"
+                  :key="variant.productVariantId"
+                  :value="variant.productVariantId"
+                >
+                  {{ variant.name }}
+                  {{ variant.skuSuffix ? `(${variant.skuSuffix})` : '' }}
+                  — {{ formatPrice(variant.priceAdjustment >= 0 ? detail.product.price + variant.priceAdjustment : detail.product.price) }}
+                  ({{ variant.stock }} in stock)
+                </option>
+              </select>
+            </div>
+
+            <div class="field quantity-field">
+              <label for="quantity-input">Quantity</label>
+              <input
+                id="quantity-input"
+                type="number"
+                min="1"
+                :max="selectedStock"
+                v-model.number="quantity"
+                :disabled="adding"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="add-button"
+              :disabled="detail.product.stock <= 0 || adding || selectedStock <= 0"
+              @click="addToCart"
+            >
+              {{ addButtonText }}
+            </button>
+
+            <p v-if="addError" class="add-error" role="alert">{{ addError }}</p>
+          </div>
+
           <p v-if="detail.product.description" class="description">
             {{ detail.product.description }}
           </p>
@@ -73,16 +120,25 @@
 import { ref, computed, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getProduct, type ProductDetail, type ProductImage } from '../api/catalog'
+import { useCartStore } from '../stores/cart'
+import { useAuthStore } from '../stores/auth'
 import type { ApiError } from '../api/client'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
 const router = useRouter()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 const loading = ref(true)
 const detail = ref<ProductDetail | null>(null)
 const error = ref<string | null>(null)
 const notFound = ref(false)
+const quantity = ref(1)
+const selectedVariantId = ref<number | undefined>(undefined)
+const adding = ref(false)
+const added = ref(false)
+const addError = ref<string | null>(null)
 
 const resolvedId = computed(() => {
   const raw = props.id ?? route.params.id
@@ -100,12 +156,62 @@ const formattedPrice = computed(() =>
   detail.value ? formatPrice(detail.value.product.price) : '',
 )
 
+const selectedStock = computed(() => {
+  if (!detail.value) return 0
+  if (selectedVariantId.value === undefined) return detail.value.product.stock
+  const variant = detail.value.variants.find((v) => v.productVariantId === selectedVariantId.value)
+  return variant ? variant.stock : detail.value.product.stock
+})
+
+const addButtonText = computed(() => {
+  if (detail.value && detail.value.product.stock <= 0) return 'Out of stock'
+  if (selectedStock.value <= 0) return 'Out of stock'
+  if (added.value) return 'Added!'
+  return 'Add to Cart'
+})
+
 function formatPrice(value: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
 }
 
 function goBack(): void {
   router.push('/')
+}
+
+async function addToCart(): Promise<void> {
+  if (!detail.value || adding.value) return
+  const productId = detail.value.product.productId
+  const effectiveStock = selectedStock.value
+  if (effectiveStock <= 0) return
+
+  const clampedQuantity = Math.max(1, Math.min(quantity.value, effectiveStock))
+  quantity.value = clampedQuantity
+
+  adding.value = true
+  addError.value = null
+  try {
+    await cartStore.addItem(
+      productId,
+      clampedQuantity,
+      selectedVariantId.value,
+      authStore.isAuthenticated,
+    )
+    added.value = true
+    setTimeout(() => {
+      added.value = false
+    }, 1200)
+  } catch (e) {
+    addError.value = errorMessage(e)
+  } finally {
+    adding.value = false
+  }
+}
+
+function errorMessage(e: unknown): string {
+  if (e && typeof e === 'object' && 'message' in e) {
+    return String((e as { message: unknown }).message)
+  }
+  return 'Failed to add item to cart'
 }
 
 watchEffect(async () => {
@@ -236,6 +342,67 @@ watchEffect(async () => {
   line-height: 1.5;
   color: #4b5563;
   white-space: pre-line;
+}
+
+.add-to-cart {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.quantity-field input {
+  width: 4rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field select {
+  min-width: 12rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+}
+
+.add-button {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.add-button:hover:not(:disabled) {
+  background: #374151;
+}
+.add-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-error {
+  width: 100%;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.85rem;
 }
 
 .variants {

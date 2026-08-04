@@ -35,10 +35,10 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S05 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S06 Cart
-- [ ] T06.1 CartService + endpoints + cookie
-- [ ] T06.2 Cart unit tests
-- [ ] T06.3 Vue cart store + CartView + Add buttons  
-→ S06 ACCEPTANCE
+- [x] T06.1 CartService + endpoints + cookie
+- [x] T06.2 Cart unit tests
+- [x] T06.3 Vue cart store + CartView + Add buttons  
+→ S06 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S07 Checkout
 - [ ] T07.1 CheckoutService + endpoints
