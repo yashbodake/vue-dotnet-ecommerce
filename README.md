@@ -1,6 +1,6 @@
-﻿# Northline — Vue + .NET Ecommerce
+﻿# Vue + .NET Ecommerce
 
-Simple shop: Vue 3 frontend, .NET 10 API, YARP gateway, SQL Express on the host.
+Simple shop: Vue 3 frontend, .NET 10 API, YARP gateway, SQL Server Express on your PC.
 
 | Service | URL |
 |---------|-----|
@@ -28,7 +28,7 @@ Ecommerce.sln               # backend solution
 - .NET 10 SDK
 - Node.js 20+
 - Docker Desktop (for Compose)
-- SQL Server Express (`.\SQLEXPRESS`) with TCP enabled
+- SQL Server Express installed locally (instance name `.\SQLEXPRESS`)
 
 ## Database (once)
 
@@ -82,4 +82,4 @@ npm run test:e2e
 
 - UI is Vue only (no Razor/MVC)
 - Data access uses `Microsoft.Data.SqlClient` (no EF Core)
-- SQL stays on the Windows host; Docker apps reach it via `host.docker.internal`
+- SQL Server Express stays on your Windows PC (not inside Docker)

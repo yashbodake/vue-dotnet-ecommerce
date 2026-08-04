@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <header class="nav">
-      <RouterLink to="/" class="brand">Northline</RouterLink>
+      <RouterLink to="/" class="brand">Shop</RouterLink>
 
       <div class="nav-right">
         <RouterLink to="/cart" class="nav-chip cart-link">

@@ -1,7 +1,6 @@
 <template>
   <div class="login">
     <h1>Sign in</h1>
-    <p class="subtitle">Northline</p>
 
     <form class="login-form" @submit.prevent="onSubmit">
       <label class="field">
