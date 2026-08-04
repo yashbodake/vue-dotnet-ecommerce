@@ -38,6 +38,21 @@ builder.Services.AddSingleton(sp =>
 // Register admin user seeder
 builder.Services.AddSingleton<AdminUserSeeder>();
 
+// Configure CORS to allow gateway and dev origins
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowGateway", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:5000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5000",
+                "http://127.0.0.1:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 // Configure JWT authentication
 var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]!;
 builder.Services.AddAuthentication(options =>
@@ -77,6 +92,8 @@ if (!app.Environment.IsEnvironment("Testing"))
     var seeder = scope.ServiceProvider.GetRequiredService<AdminUserSeeder>();
     seeder.EnsureAdminUser();
 }
+
+app.UseCors("AllowGateway");
 
 app.UseAuthentication();
 app.UseAuthorization();

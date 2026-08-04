@@ -30,9 +30,9 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S04 ACCEPTANCE (complete)
 
 ## S05 YARP
-- [ ] T05.1 Configure YARP routes + health
-- [ ] T05.2 CORS + modern-up health checks  
-→ S05 ACCEPTANCE
+- [x] T05.1 Configure YARP routes + health
+- [x] T05.2 CORS + modern-up health checks  
+→ S05 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S06 Cart
 - [ ] T06.1 CartService + endpoints + cookie
