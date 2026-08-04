@@ -34,6 +34,32 @@ public static class AuthEndpoints
         .WithName("Login")
         .WithOpenApi();
 
+        // POST /api/auth/register - create a new customer account
+        auth.MapPost("/register", async (RegisterRequest request, AuthService authService) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return Results.BadRequest("Email and password are required");
+            }
+
+            try
+            {
+                var response = await authService.RegisterAsync(request.Email, request.Password);
+                if (response == null)
+                {
+                    return Results.BadRequest("Registration failed");
+                }
+
+                return Results.Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+        })
+        .WithName("Register")
+        .WithOpenApi();
+
         // GET /api/auth/me - get current user info (requires Bearer token)
         auth.MapGet("/me", async (ClaimsPrincipal user, AuthService authService) =>
         {

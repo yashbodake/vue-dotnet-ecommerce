@@ -27,6 +27,9 @@ builder.Services.AddSingleton<CartService>();
 // Register checkout service
 builder.Services.AddSingleton<CheckoutService>();
 
+// Register account service
+builder.Services.AddSingleton<AccountService>();
+
 // Register auth service with JWT settings
 builder.Services.AddSingleton(sp =>
 {
@@ -130,6 +133,9 @@ app.MapCheckoutEndpoints();
 
 // Map auth endpoints
 app.MapAuthEndpoints();
+
+// Map account endpoints
+app.MapAccountEndpoints();
 
 app.MapGet("/", () => "Ecommerce Modern API");
 

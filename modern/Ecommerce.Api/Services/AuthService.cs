@@ -214,6 +214,63 @@ public sealed class AuthService
         return FixedTimeEquals(actualSubkey, expectedSubkey);
     }
 
+    /// <summary>
+    /// Register a new customer. Returns a JWT token response on success.
+    /// Throws ArgumentException for validation failures (duplicate email, short password).
+    /// </summary>
+    public async Task<RegisterResponse?> RegisterAsync(string email, string password)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email is required.");
+        }
+
+        if (string.IsNullOrEmpty(password) || password.Length < 6)
+        {
+            throw new ArgumentException("Password must be at least 6 characters.");
+        }
+
+        using var connection = (SqlConnection)_connectionFactory.CreateConnection();
+
+        var existingUser = await GetUserByEmailAsync(connection, email);
+        if (existingUser != null)
+        {
+            throw new ArgumentException("Email is already registered.");
+        }
+
+        var userId = Guid.NewGuid().ToString();
+        var passwordHash = HashPassword(password);
+        var securityStamp = Guid.NewGuid().ToString();
+
+        using var insert = new SqlCommand("""
+            INSERT INTO dbo.AspNetUsers
+                (Id, Email, EmailConfirmed, PasswordHash, SecurityStamp, PhoneNumber,
+                 PhoneNumberConfirmed, TwoFactorEnabled, LockoutEndDateUtc, LockoutEnabled,
+                 AccessFailedCount, UserName)
+            VALUES
+                (@Id, @Email, 1, @PasswordHash, @SecurityStamp, NULL,
+                 0, 0, NULL, 1, 0, @UserName)
+            """, connection);
+        insert.Parameters.AddWithValue("@Id", userId);
+        insert.Parameters.AddWithValue("@Email", email);
+        insert.Parameters.AddWithValue("@PasswordHash", passwordHash);
+        insert.Parameters.AddWithValue("@SecurityStamp", securityStamp);
+        insert.Parameters.AddWithValue("@UserName", email);
+
+        await insert.ExecuteNonQueryAsync();
+
+        var roles = new List<string>();
+        var token = GenerateJwtToken(userId, email, roles);
+
+        return new RegisterResponse
+        {
+            Token = new JwtSecurityTokenHandler().WriteToken(token),
+            Email = email,
+            Roles = roles,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpirationMinutes)
+        };
+    }
+
     private static bool FixedTimeEquals(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
     {
         if (a.Length != b.Length)
@@ -228,6 +285,33 @@ public sealed class AuthService
         }
 
         return result == 0;
+    }
+
+    /// <summary>
+    /// Hash password using ASP.NET Identity v3 format (PBKDF2 HMAC-SHA256, 10000 iterations).
+    /// Format: 0x00 + 16-byte salt + 24-byte subkey, base64 encoded.
+    /// </summary>
+    private static string HashPassword(string password)
+    {
+        var salt = new byte[16];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
+        var subkey = KeyDerivation.Pbkdf2(
+            password: password,
+            salt: salt,
+            prf: KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 24);
+
+        var outputBytes = new byte[1 + 16 + 24]; // marker + salt + subkey
+        outputBytes[0] = 0x00;
+        Buffer.BlockCopy(salt, 0, outputBytes, 1, 16);
+        Buffer.BlockCopy(subkey, 0, outputBytes, 17, 24);
+
+        return Convert.ToBase64String(outputBytes);
     }
 
     private JwtSecurityToken GenerateJwtToken(string userId, string email, IReadOnlyList<string> roles)
