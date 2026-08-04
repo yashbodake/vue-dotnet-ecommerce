@@ -1,20 +1,13 @@
 # Documentation
 
-Shareable docs for **Legacy Ecommerce** (redo workspace).
+| Doc | Purpose |
+|-----|---------|
+| [../README.md](../README.md) | Modern product overview + quick start |
+| [../AGENTS.md](../AGENTS.md) | Post-migration agent notes |
+| [SETUP.md](SETUP.md) | Install / DB / Docker / troubleshoot |
+| [migration/STATUS.md](migration/STATUS.md) | Slice completion status |
+| [migration/ARCHITECTURE.md](migration/ARCHITECTURE.md) | Runtime diagram |
+| [migration/SECURITY_AUDIT.md](migration/SECURITY_AUDIT.md) | Security audit notes |
+| [Legacy_Ecommerce_Project_Plan_and_Specs.md](Legacy_Ecommerce_Project_Plan_and_Specs.md) | Original specs (historical) |
 
-| Doc | Audience | Contents |
-|-----|----------|----------|
-| [../README.md](../README.md) | Everyone | Legacy overview + migration redo pointer |
-| [../AGENTS.md](../AGENTS.md) | Migration redo | **Start here** for agent-kit workflow |
-| [SETUP.md](SETUP.md) | Developers cloning the repo | Detailed install, DB, run, troubleshoot |
-| [Legacy_Ecommerce_Project_Plan_and_Specs.md](Legacy_Ecommerce_Project_Plan_and_Specs.md) | Implementers / reviewers | Spec-driven plan (Specs 00–10) |
-| [../agent-kit/README.md](../agent-kit/README.md) | Multi-agent redo | Planner + slice packs + Executor queue |
-
-## Suggested share package
-
-1. Root **README** — legacy quick start
-2. **AGENTS.md** — if they are doing the modern redo
-3. **SETUP** — local SQL / IIS
-4. **Specs** — design intent
-
-Do **not** commit secrets. Demo admin: `admin@legacy.local` / `Admin123!`.
+**Product layout:** `src/frontend` (Vue) + `src/backend` (.NET API / Gateway). Razor/MVC removed.

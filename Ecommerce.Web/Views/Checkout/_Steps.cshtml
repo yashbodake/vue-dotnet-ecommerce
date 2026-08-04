@@ -1,9 +1,0 @@
-@model Ecommerce.Web.Models.CheckoutViewModel
-@{
-    var step = (int)(ViewBag.Step ?? 1);
-}
-<nav class="checkout-steps" aria-label="Checkout steps">
-    <span class="@(step == 1 ? "active" : (step > 1 ? "done" : ""))">1. Address</span>
-    <span class="@(step == 2 ? "active" : (step > 2 ? "done" : ""))">2. Shipping</span>
-    <span class="@(step == 3 ? "active" : "")">3. Payment</span>
-</nav>

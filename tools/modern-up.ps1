@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
-# modern-up.ps1 - Build and start the modern ecommerce stack in Docker
+# modern-up.ps1 - Build and start the ecommerce stack in Docker
 
 $ErrorActionPreference = "Stop"
 
-$composeFile = Join-Path $PSScriptRoot ".." "modern" "docker-compose.yml"
+$composeFile = Join-Path $PSScriptRoot ".." "docker-compose.yml"
 
-Write-Host "Building and starting modern ecommerce stack..." -ForegroundColor Green
+Write-Host "Building and starting ecommerce stack..." -ForegroundColor Green
 docker compose -f $composeFile up --build -d
 
 if ($LASTEXITCODE -ne 0) {
