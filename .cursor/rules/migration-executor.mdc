@@ -1,0 +1,25 @@
+---
+description: Executor rules for Legacy→Modern migration small-model tasks
+alwaysApply: false
+globs: agent-kit/**/*
+---
+
+# Migration executor (small tasks)
+
+When the user is running an **agent-kit** task (`Txx.y` / `NEXT_TASK.md`):
+
+1. Read and obey `agent-kit/00_GLOBAL/RULES.md`.
+2. Stay inside the current slice `FILES.md` allow-list.
+3. Do **not** load other slices’ CONTEXT or the full MASTER_PLANNER unless asked.
+4. Stop when the task acceptance passes; do not start the next task unprompted.
+5. Prefer parity with Legacy `main` over inventing features.
+6. Modern code lives under `modern/`; do not add project references to Ecommerce.Web/Core/Services/Data.
+7. **No EF Core** — use `Microsoft.Data.SqlClient` + parameterized SQL (see RULES.md).
+8. Runtime: Docker for apps; SQL Express stays on the host.
+9. On out-of-scope failure: report `BLOCKED: <reason>` and stop; do not break frozen contracts.
+10. Integrator / Security Auditor prompts are separate — do not run those roles in an Executor chat.
+
+Wrapper template: `agent-kit/templates/SMALL_MODEL_TASK.md`  
+Queue: `agent-kit/EXECUTION_QUEUE.md`
+Integrator: `agent-kit/prompts/INTEGRATOR.md`  
+Auditor: `agent-kit/prompts/SECURITY_AUDITOR.md`

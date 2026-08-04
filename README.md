@@ -1,5 +1,7 @@
 ﻿# Legacy Ecommerce
 
+> **Migration redo:** To rebuild the modern stack from scratch with the agent kit, read **[AGENTS.md](AGENTS.md)** and start at [`agent-kit/NEXT_TASK.md`](agent-kit/NEXT_TASK.md). The finished prior migration lives in [Ecommerce-Modern](https://github.com/yashbodake/Ecommerce-Modern) (reference only).
+
 A full-stack **.NET Framework 4.7.2** eCommerce demo built with **ASP.NET MVC 5**, **Entity Framework 6 (Database-First)**, **SQL Server Express**, **Unity DI**, **ASP.NET Identity (OWIN)**, and **jQuery**.
 
 Specs **00–10** are implemented. Suitable as a portfolio / interview sample of layered “legacy stack” architecture.

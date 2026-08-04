@@ -1,18 +1,20 @@
 # Documentation
 
-Shareable docs for **Legacy Ecommerce**.
+Shareable docs for **Legacy Ecommerce** (redo workspace).
 
 | Doc | Audience | Contents |
 |-----|----------|----------|
-| [../README.md](../README.md) | Everyone | Overview, quick start, accounts, architecture |
+| [../README.md](../README.md) | Everyone | Legacy overview + migration redo pointer |
+| [../AGENTS.md](../AGENTS.md) | Migration redo | **Start here** for agent-kit workflow |
 | [SETUP.md](SETUP.md) | Developers cloning the repo | Detailed install, DB, run, troubleshoot |
 | [Legacy_Ecommerce_Project_Plan_and_Specs.md](Legacy_Ecommerce_Project_Plan_and_Specs.md) | Implementers / reviewers | Spec-driven plan (Specs 00–10) |
+| [../agent-kit/README.md](../agent-kit/README.md) | Multi-agent redo | Planner + slice packs + Executor queue |
 
 ## Suggested share package
 
-When sharing the project (GitHub, zip, interviewers):
+1. Root **README** — legacy quick start
+2. **AGENTS.md** — if they are doing the modern redo
+3. **SETUP** — local SQL / IIS
+4. **Specs** — design intent
 
-1. Point them at the root **README** first.
-2. Link **SETUP** if they need to run it locally.
-3. Link the **specs** doc if they want design intent / acceptance criteria.
-4. Do **not** commit secrets — there are none required beyond local SQL Windows auth; admin password is a documented demo credential.
+Do **not** commit secrets. Demo admin: `admin@legacy.local` / `Admin123!`.
