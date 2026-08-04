@@ -57,6 +57,17 @@ const router = createRouter({
       name: 'admin-orders',
       component: () => import('../views/admin/AdminOrdersView.vue'),
     },
+    // Legacy ASP.NET MVC redirects
+    { path: '/Cart', redirect: '/cart' },
+    { path: '/Checkout', redirect: '/checkout' },
+    { path: '/Account/Login', redirect: '/login' },
+    { path: '/Account/Register', redirect: '/register' },
+    { path: '/Account/Orders', redirect: '/orders' },
+    { path: '/Admin/Products', redirect: '/admin/products' },
+    { path: '/Admin/Orders', redirect: '/admin/orders' },
+    { path: '/Product/:id', redirect: to => `/products/${to.params.id}` },
+    { path: '/Product/Detail/:id', redirect: to => `/products/${to.params.id}` },
+    { path: '/Home/Index', redirect: '/' },
   ],
 })
 

@@ -59,10 +59,10 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S09 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S10 Polish + E2E
-- [ ] T10.1 Redirects + card layout polish
-- [ ] T10.2 Playwright e2e suite
-- [ ] T10.3 README old-vs-new + docs status  
-→ S10 ACCEPTANCE → Mission DoD
+- [x] T10.1 Redirects + card layout polish
+- [x] T10.2 Playwright e2e suite
+- [x] T10.3 README old-vs-new + docs status  
+→ S10 ACCEPTANCE (code complete; runtime needs Docker) → Mission DoD
 
 ## Next task ready now
 **T01.3** — use [`NEXT_TASK.md`](./NEXT_TASK.md) (regenerate that file when advancing the queue).

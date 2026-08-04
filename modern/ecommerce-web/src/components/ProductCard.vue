@@ -110,6 +110,7 @@ function goToDetail(): void {
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
+  flex: 1;
   gap: 0.25rem;
 }
 .name {
@@ -117,9 +118,13 @@ function goToDetail(): void {
   font-size: 0.95rem;
   font-weight: 600;
   color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  min-height: 2.6em;
 }
 .price {
   margin: 0;
@@ -137,7 +142,7 @@ function goToDetail(): void {
 }
 
 .add-button {
-  margin-top: 0.5rem;
+  margin-top: auto;
   padding: 0.45rem 0.75rem;
   border: none;
   border-radius: 6px;
