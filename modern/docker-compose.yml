@@ -1,0 +1,47 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Ecommerce.Api/Dockerfile
+    ports:
+      - "5100:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # SQL connection for S02+ (host SQL Express, not containerized)
+      # ConnectionString=Server=host.docker.internal,1433;Database=LegacyEcommerceDb;User Id=sa;Password=${SQL_PASSWORD:-YourPassword123!};TrustServerCertificate=True
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ecommerce-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Ecommerce.Gateway/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # YARP routes to api and web via compose DNS
+      - ReverseProxy__Routes__api__Address__http://api:8080
+      - ReverseProxy__Routes__web__Address__http://web:80
+    depends_on:
+      - api
+      - web
+    networks:
+      - ecommerce-network
+
+  web:
+    build:
+      context: .
+      dockerfile: ecommerce-web/Dockerfile
+    ports:
+      - "5173:80"
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge

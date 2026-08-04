@@ -5,23 +5,23 @@ Run **one** task per small-model chat. Check off when acceptance passes.
 Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template wrapper.
 
 ## S01 Skeleton
-- [ ] T01.1 Create API + Gateway + Tests projects
-- [ ] T01.2 Scaffold Vue 3 + Vite + Pinia + Router
-- [ ] T01.3 Docker Compose + modern-up.ps1  
+- [x] T01.1 Create API + Gateway + Tests projects
+- [x] T01.2 Scaffold Vue 3 + Vite + Pinia + Router
+- [x] T01.3 Docker Compose + modern-up.ps1  
 
 → then `slices/S01_skeleton/ACCEPTANCE.md`
 
 ## S02 Catalog API
-- [ ] T02.1 SqlConnection factory + catalog POCOs
-- [ ] T02.2 ProductCatalogService + endpoints
-- [ ] T02.3 Catalog unit tests  
-→ S02 ACCEPTANCE
+- [x] T02.1 SqlConnection factory + catalog POCOs
+- [x] T02.2 ProductCatalogService + endpoints
+- [x] T02.3 Catalog unit tests  
+→ S02 ACCEPTANCE (complete)
 
 ## S03 JWT + AdminSeed
-- [ ] T03.1 AspNet entities + AuthService login/JWT
-- [ ] T03.2 AdminUserSeeder + /api/auth/me
-- [ ] T03.3 Auth unit/API tests  
-→ S03 ACCEPTANCE
+- [x] T03.1 AspNet entities + AuthService login/JWT
+- [x] T03.2 AdminUserSeeder + /api/auth/me
+- [x] T03.3 Auth unit/API tests  
+→ S03 ACCEPTANCE (complete)
 
 ## S04 Vue catalog + login
 - [ ] T04.1 API client + auth store + LoginView
@@ -65,4 +65,4 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S10 ACCEPTANCE → Mission DoD
 
 ## Next task ready now
-**T01.1** — use [`NEXT_TASK.md`](./NEXT_TASK.md) (regenerate that file when advancing the queue).
+**T01.3** — use [`NEXT_TASK.md`](./NEXT_TASK.md) (regenerate that file when advancing the queue).

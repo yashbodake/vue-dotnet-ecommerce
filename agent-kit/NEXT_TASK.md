@@ -1,12 +1,12 @@
 # NEXT TASK — paste into a small-model chat
 
-**Slice:** S01_skeleton  
-**Queue:** See `EXECUTION_QUEUE.md` — mark T01.1 done after acceptance.
+**Slice:** S03_jwt_auth  
+**Queue:** See `EXECUTION_QUEUE.md` — mark T03.3 done after acceptance.
 
 ## Attach these files only
 1. `agent-kit/00_GLOBAL/RULES.md`
-2. `agent-kit/slices/S01_skeleton/CONTEXT.md`
-3. `agent-kit/slices/S01_skeleton/FILES.md`
+2. `agent-kit/slices/S03_jwt_auth/CONTEXT.md`
+3. `agent-kit/slices/S03_jwt_auth/FILES.md`
 4. This file (or paste below)
 
 ---
@@ -20,22 +20,15 @@ Do not read or modify Ecommerce.Web / Ecommerce.Services / Ecommerce.Data / Ecom
 When acceptance passes, stop and summarize: files changed, commands run, result.
 If blocked, report OPEN QUESTION and stop — do not invent cross-slice APIs.
 
-TASK:
+---
 
-### T01.1 — Create API + Gateway + Tests projects
+### T03.3 — Auth unit/API tests
 - Model tier: small
-- Goal: Scaffold .NET 10 Web API, YARP gateway, xUnit test project; add to `Ecommerce.Modern.sln`
-- Inputs: none
-- Allowed write paths: `modern/Ecommerce.Api/**`, `modern/Ecommerce.Gateway/**`, `modern/Ecommerce.Api.Tests/**`, `modern/Ecommerce.Modern.sln`
-- Forbidden: Vue app; legacy projects
-- Steps:
-  1. Ensure `modern/` exists
-  2. `dotnet new webapi` / yarp-capable web + xunit (net10.0)
-  3. Add projects to sln; Api.Tests references Api
-  4. Gateway: package `Yarp.ReverseProxy`; empty reverse proxy section OK
-- Acceptance: `$env:PATH="$env:LOCALAPPDATA\Microsoft\dotnet;$env:PATH"; dotnet build modern/Ecommerce.Modern.sln` exits 0
-- Stop condition: Build green; no endpoints beyond template
+- Goal: Tests for login fail/success, seeder idempotent, me unauthorized
+- Allowed write paths: `Ecommerce.Api.Tests/**`
+- Acceptance: `dotnet test` auth/seeder tests pass
+- Stop condition: Green tests
 
 ---
 
-After success: check off T01.1 in `EXECUTION_QUEUE.md` and replace this file’s TASK with **T01.2** from `slices/S01_skeleton/TASKS.md`.
+After success: check off T03.3 in `EXECUTION_QUEUE.md` and replace this file's TASK with **S03 ACCEPTANCE** from `slices/S03_jwt_auth/ACCEPTANCE.md`.
