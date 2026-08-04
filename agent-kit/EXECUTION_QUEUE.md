@@ -24,10 +24,10 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S03 ACCEPTANCE (complete)
 
 ## S04 Vue catalog + login
-- [ ] T04.1 API client + auth store + LoginView
-- [ ] T04.2 Catalog store + HomeView + ProductCard
-- [ ] T04.3 ProductDetailView  
-→ S04 ACCEPTANCE
+- [x] T04.1 API client + auth store + LoginView
+- [x] T04.2 Catalog store + HomeView + ProductCard
+- [x] T04.3 ProductDetailView  
+→ S04 ACCEPTANCE (complete)
 
 ## S05 YARP
 - [ ] T05.1 Configure YARP routes + health

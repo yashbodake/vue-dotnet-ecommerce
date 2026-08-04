@@ -1,12 +1,12 @@
 # NEXT TASK — paste into a small-model chat
 
-**Slice:** S03_jwt_auth  
-**Queue:** See `EXECUTION_QUEUE.md` — mark T03.3 done after acceptance.
+**Slice:** S04_vue_catalog  
+**Queue:** See `EXECUTION_QUEUE.md` — mark T04.1 done after acceptance.
 
 ## Attach these files only
 1. `agent-kit/00_GLOBAL/RULES.md`
-2. `agent-kit/slices/S03_jwt_auth/CONTEXT.md`
-3. `agent-kit/slices/S03_jwt_auth/FILES.md`
+2. `agent-kit/slices/S04_vue_catalog/CONTEXT.md`
+3. `agent-kit/slices/S04_vue_catalog/FILES.md`
 4. This file (or paste below)
 
 ---
@@ -22,13 +22,13 @@ If blocked, report OPEN QUESTION and stop — do not invent cross-slice APIs.
 
 ---
 
-### T03.3 — Auth unit/API tests
+### T04.1 — API client + auth store + LoginView
 - Model tier: small
-- Goal: Tests for login fail/success, seeder idempotent, me unauthorized
-- Allowed write paths: `Ecommerce.Api.Tests/**`
-- Acceptance: `dotnet test` auth/seeder tests pass
-- Stop condition: Green tests
+- Goal: login works from Vue against API
+- Allowed write paths: `src/api/**`, `src/stores/auth.ts`, `src/views/LoginView.vue`, router
+- Acceptance: Manual login as admin shows authenticated nav state
+- Stop condition: Token stored; me hydration optional
 
 ---
 
-After success: check off T03.3 in `EXECUTION_QUEUE.md` and replace this file's TASK with **S03 ACCEPTANCE** from `slices/S03_jwt_auth/ACCEPTANCE.md`.
+After success: check off T04.1 in `EXECUTION_QUEUE.md` and replace this file's TASK with **T04.2** from `slices/S04_vue_catalog/TASKS.md`.

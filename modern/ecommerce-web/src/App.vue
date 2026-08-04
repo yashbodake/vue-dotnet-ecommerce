@@ -1,7 +1,84 @@
 <template>
-  <RouterView />
+  <div class="app">
+    <header class="nav">
+      <RouterLink to="/" class="brand">Ecommerce Modern</RouterLink>
+
+      <div class="nav-right">
+        <template v-if="authStore.isAuthenticated">
+          <span class="user">{{ authStore.email }}</span>
+          <button type="button" class="logout" @click="onLogout">Sign out</button>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="login-link">Sign in</RouterLink>
+        </template>
+      </div>
+    </header>
+
+    <main class="content">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-// Root app component - renders routed views
+import { useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+function onLogout(): void {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
+
+<style scoped>
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border, #e5e4e7);
+  background: var(--bg, #fff);
+}
+
+.brand {
+  font-weight: 600;
+  color: var(--text-h, #08060d);
+  text-decoration: none;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user {
+  color: var(--text, #6b6375);
+  font-size: 0.9rem;
+}
+
+.logout,
+.login-link {
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  color: var(--text-h, #08060d);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.content {
+  flex: 1;
+}
+</style>
