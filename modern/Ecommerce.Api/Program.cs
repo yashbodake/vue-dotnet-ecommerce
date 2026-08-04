@@ -24,6 +24,9 @@ builder.Services.AddSingleton<ProductCatalogService>();
 // Register cart service
 builder.Services.AddSingleton<CartService>();
 
+// Register checkout service
+builder.Services.AddSingleton<CheckoutService>();
+
 // Register auth service with JWT settings
 builder.Services.AddSingleton(sp =>
 {
@@ -121,6 +124,9 @@ app.MapCatalogEndpoints();
 
 // Map cart endpoints
 app.MapCartEndpoints();
+
+// Map checkout endpoints
+app.MapCheckoutEndpoints();
 
 // Map auth endpoints
 app.MapAuthEndpoints();

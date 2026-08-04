@@ -41,10 +41,10 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S06 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S07 Checkout
-- [ ] T07.1 CheckoutService + endpoints
-- [ ] T07.2 Checkout tests
-- [ ] T07.3 Vue checkout wizard  
-→ S07 ACCEPTANCE
+- [x] T07.1 CheckoutService + endpoints
+- [x] T07.2 Checkout tests
+- [x] T07.3 Vue checkout wizard  
+→ S07 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S08 Account
 - [ ] T08.1 Register + account order endpoints

@@ -74,7 +74,7 @@
         </p>
         <div class="actions">
           <RouterLink to="/" class="button-link secondary">Continue shopping</RouterLink>
-          <button type="button" class="checkout" disabled>Proceed to checkout</button>
+          <RouterLink to="/checkout" class="button-link checkout">Proceed to checkout</RouterLink>
         </div>
       </div>
     </div>
