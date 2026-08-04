@@ -30,6 +30,9 @@ builder.Services.AddSingleton<CheckoutService>();
 // Register account service
 builder.Services.AddSingleton<AccountService>();
 
+// Register admin service
+builder.Services.AddSingleton<AdminService>();
+
 // Register auth service with JWT settings
 builder.Services.AddSingleton(sp =>
 {
@@ -84,7 +87,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+});
 
 var app = builder.Build();
 
@@ -136,6 +142,9 @@ app.MapAuthEndpoints();
 
 // Map account endpoints
 app.MapAccountEndpoints();
+
+// Map admin endpoints
+app.MapAdminEndpoints();
 
 app.MapGet("/", () => "Ecommerce Modern API");
 

@@ -53,10 +53,10 @@ Attach always: `00_GLOBAL/RULES.md` + slice `CONTEXT.md` + `FILES.md` + template
 → S08 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S09 Admin
-- [ ] T09.1 AdminService + endpoints + policy
-- [ ] T09.2 Admin tests
-- [ ] T09.3 Vue admin UI  
-→ S09 ACCEPTANCE
+- [x] T09.1 AdminService + endpoints + policy
+- [x] T09.2 Admin tests
+- [x] T09.3 Vue admin UI  
+→ S09 ACCEPTANCE (code complete; runtime needs Docker)
 
 ## S10 Polish + E2E
 - [ ] T10.1 Redirects + card layout polish

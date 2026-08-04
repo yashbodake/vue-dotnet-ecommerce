@@ -36,6 +36,27 @@ const router = createRouter({
       component: () => import('../views/OrderConfirmationView.vue'),
       props: true,
     },
+    {
+      path: '/admin/products',
+      name: 'admin-products',
+      component: () => import('../views/admin/AdminProductsView.vue'),
+    },
+    {
+      path: '/admin/products/create',
+      name: 'admin-product-create',
+      component: () => import('../views/admin/AdminProductEditView.vue'),
+    },
+    {
+      path: '/admin/products/:id/edit',
+      name: 'admin-product-edit',
+      component: () => import('../views/admin/AdminProductEditView.vue'),
+      props: true,
+    },
+    {
+      path: '/admin/orders',
+      name: 'admin-orders',
+      component: () => import('../views/admin/AdminOrdersView.vue'),
+    },
   ],
 })
 

@@ -9,6 +9,12 @@
           <span v-if="cartStore.itemCount > 0" class="badge">{{ cartStore.itemCount }}</span>
         </RouterLink>
         <template v-if="authStore.isAuthenticated">
+          <RouterLink v-if="authStore.roles.includes('Admin')" to="/admin/products" class="admin-link">
+            Admin: Products
+          </RouterLink>
+          <RouterLink v-if="authStore.roles.includes('Admin')" to="/admin/orders" class="admin-link">
+            Admin: Orders
+          </RouterLink>
           <span class="user">{{ authStore.email }}</span>
           <button type="button" class="logout" @click="onLogout">Sign out</button>
         </template>
@@ -80,7 +86,8 @@ function onLogout(): void {
 
 .logout,
 .login-link,
-.cart-link {
+.cart-link,
+.admin-link {
   border: 1px solid var(--border, #e5e4e7);
   border-radius: 0.3rem;
   padding: 0.35rem 0.75rem;
