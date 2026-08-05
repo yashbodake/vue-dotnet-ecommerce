@@ -93,7 +93,7 @@ public sealed class AdminService
     /// </summary>
     public AdminProductDto CreateProduct(CreateProductRequest request)
     {
-        ValidateProductRequest(request.Name, request.Price, request.CategoryId);
+        ValidateProductRequest(request.Name, request.Price, request.CategoryId, request.Stock);
 
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
         using var transaction = connection.BeginTransaction();
@@ -146,7 +146,7 @@ public sealed class AdminService
     /// </summary>
     public AdminProductDto UpdateProduct(int productId, UpdateProductRequest request)
     {
-        ValidateProductRequest(request.Name, request.Price, request.CategoryId);
+        ValidateProductRequest(request.Name, request.Price, request.CategoryId, request.Stock);
 
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
         using var transaction = connection.BeginTransaction();
@@ -208,8 +208,24 @@ public sealed class AdminService
     public void SoftDeleteProduct(int productId)
     {
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
+
+        // Idempotent-correct semantics: only an active product may be soft-deleted.
+        // If the product does not exist or is already inactive, treat it as not found.
+        using (var checkCommand = new SqlCommand(
+            "SELECT IsActive FROM dbo.Product WHERE ProductId = @ProductId",
+            connection))
+        {
+            checkCommand.Parameters.AddWithValue("@ProductId", productId);
+
+            using var reader = checkCommand.ExecuteReader();
+            if (!reader.Read() || reader.GetBoolean(0) == false)
+            {
+                throw new KeyNotFoundException("Product not found.");
+            }
+        }
+
         using var command = new SqlCommand(
-            "UPDATE dbo.Product SET IsActive = 0 WHERE ProductId = @ProductId",
+            "UPDATE dbo.Product SET IsActive = 0 WHERE ProductId = @ProductId AND IsActive = 1",
             connection);
 
         command.Parameters.AddWithValue("@ProductId", productId);
@@ -265,9 +281,14 @@ public sealed class AdminService
                 o.Status,
                 o.ShippingAddress,
                 o.TotalAmount,
-                (SELECT COUNT(*) FROM dbo.OrderItem oi WHERE oi.OrderId = o.OrderId) AS ItemCount
+                COALESCE(oi.ItemCount, 0) AS ItemCount
             FROM dbo.Orders o
             LEFT JOIN dbo.AspNetUsers u ON o.UserId = u.Id
+            LEFT JOIN (
+                SELECT OrderId, COUNT(*) AS ItemCount
+                FROM dbo.OrderItem
+                GROUP BY OrderId
+            ) oi ON oi.OrderId = o.OrderId
             """;
 
         using var command = new SqlCommand();
@@ -322,15 +343,40 @@ public sealed class AdminService
                 }
             }
 
-            transaction.Commit();
-
-            var order = GetOrderById(orderId);
-            if (order == null)
+            using (var readCommand = new SqlCommand("""
+                SELECT TOP 1
+                    o.OrderId,
+                    o.UserId,
+                    u.Email AS UserEmail,
+                    o.OrderDate,
+                    o.Status,
+                    o.ShippingAddress,
+                    o.TotalAmount,
+                    COALESCE(oi.ItemCount, 0) AS ItemCount
+                FROM dbo.Orders o
+                LEFT JOIN dbo.AspNetUsers u ON o.UserId = u.Id
+                LEFT JOIN (
+                    SELECT OrderId, COUNT(*) AS ItemCount
+                    FROM dbo.OrderItem
+                    GROUP BY OrderId
+                ) oi ON oi.OrderId = o.OrderId
+                WHERE o.OrderId = @OrderId
+                """, connection, transaction))
             {
-                throw new InvalidOperationException("Order was updated but could not be reloaded.");
-            }
+                readCommand.Parameters.AddWithValue("@OrderId", orderId);
 
-            return order;
+                using var reader = readCommand.ExecuteReader();
+                if (!reader.Read())
+                {
+                    throw new InvalidOperationException("Order was updated but could not be reloaded.");
+                }
+
+                var order = MapAdminOrder(reader);
+
+                reader.Close();
+                transaction.Commit();
+                return order;
+            }
         }
         catch
         {
@@ -371,16 +417,21 @@ public sealed class AdminService
         return MapAdminOrder(reader);
     }
 
-    private static void ValidateProductRequest(string name, decimal price, int categoryId)
+    private static void ValidateProductRequest(string name, decimal price, int categoryId, int stock)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Product name is required.");
         }
 
-        if (price < 0)
+        if (price <= 0)
         {
-            throw new ArgumentException("Price cannot be negative.");
+            throw new ArgumentException("Price must be greater than zero.");
+        }
+
+        if (stock < 0)
+        {
+            throw new ArgumentException("Stock cannot be negative.");
         }
 
         if (categoryId <= 0)

@@ -1,0 +1,12 @@
+# Agent output directory.
+# Review/analysis/repair/verify agents write JSON here:
+#   security-findings.json
+#   adversarial-findings.json
+#   bloat-findings.json
+#   efficiency-findings.json
+#   repair-log.json
+#   final-verification.json
+# (plus optional semgrep.json / trivy.json from security-reviewer)
+#
+# Transient result files are git-ignored (see root .gitignore);
+# only this placeholder is tracked so the directory exists.

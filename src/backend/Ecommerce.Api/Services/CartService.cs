@@ -383,21 +383,46 @@ public sealed class CartService
                 }
             }
 
+            // Build O(1) lookup over existing user items so matching is linear in guest count.
+            var userItemLookup = new Dictionary<(int ProductId, int? ProductVariantId), CartItem>();
+            foreach (var userItem in userItems)
+            {
+                var key = (userItem.ProductId, userItem.ProductVariantId);
+                userItemLookup[key] = userItem;
+            }
+
+            // Batch-load product and variant stock info for all guest items in two round-trips.
+            var productLookup = LoadMergeProductInfo(connection, transaction, guestItems);
+            var variantLookup = LoadMergeVariantInfo(connection, transaction, guestItems);
+
+            // Compute the reserved quantity already held by the authenticated user for each
+            // product+variant combination in a single pass.
+            var reservedLookup = new Dictionary<(int ProductId, int? ProductVariantId), int>();
+            foreach (var userItem in userItems)
+            {
+                var key = (userItem.ProductId, userItem.ProductVariantId);
+                reservedLookup[key] = reservedLookup.GetValueOrDefault(key) + userItem.Quantity;
+            }
+
             foreach (var guestItem in guestItems)
             {
-                var match = userItems.FirstOrDefault(ui =>
-                    ui.ProductId == guestItem.ProductId &&
-                    ui.ProductVariantId == guestItem.ProductVariantId);
+                var key = (guestItem.ProductId, guestItem.ProductVariantId);
+                userItemLookup.TryGetValue(key, out var match);
 
-                var validation = ValidateProductAndStock(
-                    connection, transaction, guestItem.ProductId, guestItem.ProductVariantId, authUserId, isGuest: false);
+                int effectiveStock = ComputeEffectiveStock(
+                    guestItem.ProductId,
+                    guestItem.ProductVariantId,
+                    productLookup,
+                    variantLookup,
+                    reservedLookup,
+                    match);
 
                 if (match != null)
                 {
                     var newQuantity = match.Quantity + guestItem.Quantity;
-                    if (validation.EffectiveStock < newQuantity)
+                    if (effectiveStock < newQuantity)
                     {
-                        newQuantity = validation.EffectiveStock; // clamp to available stock
+                        newQuantity = effectiveStock; // clamp to available stock
                     }
 
                     using var updateCommand = new SqlCommand(
@@ -416,9 +441,9 @@ public sealed class CartService
                 else
                 {
                     var reassignedQuantity = guestItem.Quantity;
-                    if (validation.EffectiveStock < reassignedQuantity)
+                    if (effectiveStock < reassignedQuantity)
                     {
-                        reassignedQuantity = validation.EffectiveStock;
+                        reassignedQuantity = effectiveStock;
                     }
 
                     if (reassignedQuantity > 0)
@@ -601,4 +626,135 @@ public sealed class CartService
         bool VariantValid,
         int? VariantStock,
         int EffectiveStock);
+
+    private readonly record struct MergeProductInfo(bool IsActive, int Stock);
+    private readonly record struct MergeVariantInfo(int Stock);
+
+    private static Dictionary<int, MergeProductInfo> LoadMergeProductInfo(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        List<CartItem> guestItems)
+    {
+        var lookup = new Dictionary<int, MergeProductInfo>();
+        var productIds = guestItems
+            .Select(g => g.ProductId)
+            .Distinct()
+            .ToList();
+
+        if (productIds.Count == 0)
+        {
+            return lookup;
+        }
+
+        var parameterNames = string.Join(", ", productIds.Select((_, i) => $"@ProductId{i}"));
+        using var command = new SqlCommand(
+            "SELECT ProductId, IsActive, Stock " +
+            $"FROM dbo.Product WHERE ProductId IN ({parameterNames})",
+            connection, transaction);
+
+        for (var i = 0; i < productIds.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@ProductId{i}", productIds[i]);
+        }
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            lookup[reader.GetInt32(0)] = new MergeProductInfo(
+                reader.GetBoolean(1),
+                reader.GetInt32(2));
+        }
+
+        return lookup;
+    }
+
+    private static Dictionary<(int ProductId, int VariantId), MergeVariantInfo> LoadMergeVariantInfo(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        List<CartItem> guestItems)
+    {
+        var lookup = new Dictionary<(int ProductId, int VariantId), MergeVariantInfo>();
+        var variants = guestItems
+            .Where(g => g.ProductVariantId.HasValue)
+            .Select(g => (g.ProductId, VariantId: g.ProductVariantId!.Value))
+            .Distinct()
+            .ToList();
+
+        if (variants.Count == 0)
+        {
+            return lookup;
+        }
+
+        var parameterNames = string.Join(", ", variants.Select((_, i) => $"@VariantId{i}"));
+        using var command = new SqlCommand(
+            "SELECT ProductId, ProductVariantId, Stock " +
+            $"FROM dbo.ProductVariant WHERE ProductVariantId IN ({parameterNames})",
+            connection, transaction);
+
+        for (var i = 0; i < variants.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@VariantId{i}", variants[i].VariantId);
+        }
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            lookup[(reader.GetInt32(0), reader.GetInt32(1))] = new MergeVariantInfo(
+                reader.GetInt32(2));
+        }
+
+        return lookup;
+    }
+
+    private static int ComputeEffectiveStock(
+        int productId,
+        int? variantId,
+        Dictionary<int, MergeProductInfo> productLookup,
+        Dictionary<(int ProductId, int VariantId), MergeVariantInfo> variantLookup,
+        Dictionary<(int ProductId, int? ProductVariantId), int> reservedLookup,
+        CartItem? matchedUserItem)
+    {
+        var productStock = 0;
+        if (productLookup.TryGetValue(productId, out var productInfo))
+        {
+            if (!productInfo.IsActive)
+            {
+                return 0;
+            }
+            productStock = productInfo.Stock;
+        }
+
+        int? variantStock = null;
+        if (variantId.HasValue
+            && variantLookup.TryGetValue((productId, variantId.Value), out var variantInfo))
+        {
+            variantStock = variantInfo.Stock;
+        }
+
+        var effectiveStock = variantStock ?? productStock;
+
+        var key = (productId, variantId);
+        if (reservedLookup.TryGetValue(key, out var reserved))
+        {
+            // When merging into an existing user line, that line's own quantity is about
+            // to be replaced by the merged quantity, so we must not count it as reserved.
+            // The original per-item helper excluded the matched CartItemId from the reserved
+            // sum; we replicate that exactly here. userItemLookup guarantees at most one line
+            // per product+variant, so reserved == matchedUserItem.Quantity in that case.
+            var reservedWithoutMatch = reserved - (matchedUserItem?.Quantity ?? 0);
+            if (reservedWithoutMatch < 0)
+            {
+                reservedWithoutMatch = 0;
+            }
+
+            effectiveStock -= reservedWithoutMatch;
+        }
+
+        if (effectiveStock < 0)
+        {
+            effectiveStock = 0;
+        }
+
+        return effectiveStock;
+    }
 }

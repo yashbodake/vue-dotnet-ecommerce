@@ -1,132 +1,152 @@
 <template>
-  <div class="product-detail">
-    <div v-if="loading" class="status" aria-live="polite">Loading product...</div>
+  <div class="product-detail container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <RouterLink to="/" class="crumb">Catalogue</RouterLink>
+      <span class="sep" aria-hidden="true">/</span>
+      <span class="crumb current">{{ detail?.product.name || 'Product' }}</span>
+    </nav>
 
-    <div v-else-if="notFound" class="status not-found">
-      <p>Product not found.</p>
-      <button type="button" class="back" @click="goBack">Back to catalog</button>
+    <!-- Loading skeleton -->
+    <div v-if="loading" class="layout" aria-live="polite">
+      <div class="media skeleton" aria-hidden="true"></div>
+      <div class="info" aria-hidden="true">
+        <div class="skeleton line w-60 h-xl"></div>
+        <div class="skeleton line w-30 h-lg"></div>
+        <div class="skeleton line w-80"></div>
+        <div class="skeleton line w-80"></div>
+        <div class="skeleton line w-40 h-btn"></div>
+      </div>
     </div>
 
+    <!-- Not found -->
+    <div v-else-if="notFound" class="status">
+      <h1>Product not found</h1>
+      <p class="status-copy">We couldn't find what you were looking for.</p>
+      <RouterLink to="/" class="btn btn-primary">Back to catalogue</RouterLink>
+    </div>
+
+    <!-- Error -->
     <div v-else-if="error" class="status error" aria-live="polite">
-      <p>{{ error }}</p>
-      <button type="button" class="back" @click="goBack">Back to catalog</button>
+      <p class="status-copy">{{ error }}</p>
+      <RouterLink to="/" class="btn btn-primary">Back to catalogue</RouterLink>
     </div>
 
-    <div v-else-if="detail" class="detail">
-      <button type="button" class="back" @click="goBack">Back to catalog</button>
-
-      <div class="layout">
-        <div class="media">
-          <div v-if="displayImages.length > 0" class="gallery">
-            <img
-              v-for="img in displayImages"
-              :key="img.productImageId"
-              :src="img.url"
-              :alt="detail.product.name"
-              class="gallery-image"
-            />
-          </div>
-          <div v-else-if="detail.product.thumbnailUrl" class="main-image">
-            <img :src="detail.product.thumbnailUrl" :alt="detail.product.name" />
-          </div>
-          <div v-else class="placeholder" aria-hidden="true">No image available</div>
+    <!-- Detail -->
+    <div v-else-if="detail" class="layout">
+      <div class="media">
+        <div v-if="displayImages.length > 0" class="gallery">
+          <img
+            v-for="(src, index) in displayImages"
+            :key="`${src}-${index}`"
+            :src="src"
+            :alt="detail.product.name"
+            class="gallery-image"
+            @error="onDetailImageError($event)"
+          />
         </div>
-
-        <div class="info">
-          <h1>{{ detail.product.name }}</h1>
-          <p class="price">{{ formattedPrice }}</p>
-          <p class="stock" :class="{ out: detail.product.stock <= 0 }">
-            {{ detail.product.stock > 0 ? `In stock (${detail.product.stock})` : 'Out of stock' }}
-          </p>
-
-          <div class="add-to-cart">
-            <div v-if="detail.variants.length > 0" class="field">
-              <label for="variant-select">Variant</label>
-              <select
-                id="variant-select"
-                v-model.number="selectedVariantId"
-                :disabled="adding"
-              >
-                <option :value="undefined">Select a variant</option>
-                <option
-                  v-for="variant in detail.variants"
-                  :key="variant.productVariantId"
-                  :value="variant.productVariantId"
-                >
-                  {{ variant.name }}
-                  {{ variant.skuSuffix ? `(${variant.skuSuffix})` : '' }}
-                  — {{ formatPrice(variant.priceAdjustment >= 0 ? detail.product.price + variant.priceAdjustment : detail.product.price) }}
-                  ({{ variant.stock }} in stock)
-                </option>
-              </select>
-            </div>
-
-            <div class="field quantity-field">
-              <label for="quantity-input">Quantity</label>
-              <input
-                id="quantity-input"
-                type="number"
-                min="1"
-                :max="selectedStock"
-                v-model.number="quantity"
-                :disabled="adding"
-              />
-            </div>
-
-            <button
-              type="button"
-              class="add-button"
-              :disabled="detail.product.stock <= 0 || adding || selectedStock <= 0"
-              @click="addToCart"
-            >
-              {{ addButtonText }}
-            </button>
-
-            <p v-if="addError" class="add-error" role="alert">{{ addError }}</p>
-          </div>
-
-          <p v-if="detail.product.description" class="description">
-            {{ detail.product.description }}
-          </p>
+        <div v-else class="main-image">
+          <img :src="fallbackSrc" :alt="detail.product.name" />
         </div>
       </div>
 
-      <section v-if="detail.variants.length > 0" class="variants" aria-label="Product variants">
-        <h2>Variants</h2>
-        <table class="variants-table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">SKU</th>
-              <th scope="col">Stock</th>
-              <th scope="col">Price Adj.</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="variant in detail.variants" :key="variant.productVariantId">
-              <td>{{ variant.name }}</td>
-              <td>{{ variant.skuSuffix ?? '-' }}</td>
-              <td>{{ variant.stock }}</td>
-              <td>{{ formatPrice(variant.priceAdjustment) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+      <div class="info">
+        <h1>{{ detail.product.name }}</h1>
+        <p class="price tabular">{{ formattedPrice }}</p>
+        <p class="stock">
+          <span class="pill" :class="detail.product.stock > 0 ? 'pill-success' : 'pill-danger'">
+            {{ detail.product.stock > 0 ? `In stock · ${detail.product.stock}` : 'Sold out' }}
+          </span>
+        </p>
+
+        <div class="add-to-cart">
+          <div v-if="detail.variants.length > 0" class="field variant-field">
+            <label for="variant-select">Variant</label>
+            <select
+              id="variant-select"
+              class="select"
+              v-model.number="selectedVariantId"
+              :disabled="adding"
+            >
+              <option :value="undefined">Select a variant</option>
+              <option
+                v-for="variant in detail.variants"
+                :key="variant.productVariantId"
+                :value="variant.productVariantId"
+              >
+                {{ variant.name }}
+                {{ variant.skuSuffix ? `(${variant.skuSuffix})` : '' }} —
+                {{ formatPrice(variant.priceAdjustment >= 0 ? detail.product.price + variant.priceAdjustment : detail.product.price) }}
+                ({{ variant.stock }} in stock)
+              </option>
+            </select>
+          </div>
+
+          <div class="field quantity-field">
+            <label for="quantity-input">Quantity</label>
+            <input
+              id="quantity-input"
+              class="input"
+              type="number"
+              min="1"
+              :max="selectedStock"
+              v-model.number="quantity"
+              :disabled="adding"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary add-button"
+            :disabled="detail.product.stock <= 0 || adding || selectedStock <= 0"
+            @click="addToCart"
+          >
+            {{ addButtonText }}
+          </button>
+
+          <p v-if="addError" class="pill pill-danger add-error" role="alert">{{ addError }}</p>
+        </div>
+
+        <p v-if="detail.product.description" class="description">
+          {{ detail.product.description }}
+        </p>
+      </div>
     </div>
+
+    <section v-if="detail && detail.variants.length > 0" class="variants" aria-label="Product variants">
+      <h2>Variants</h2>
+      <table class="table variants-table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">SKU</th>
+            <th scope="col">Stock</th>
+            <th scope="col">Price adj.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="variant in detail.variants" :key="variant.productVariantId">
+            <td>{{ variant.name }}</td>
+            <td class="muted">{{ variant.skuSuffix ?? '—' }}</td>
+            <td class="tabular">{{ variant.stock }}</td>
+            <td class="tabular">{{ formatPrice(variant.priceAdjustment) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { getProduct, type ProductDetail, type ProductImage } from '../api/catalog'
+import { useRoute } from 'vue-router'
+import { getProduct, type ProductDetail } from '../api/catalog'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import type { ApiError } from '../api/client'
+import { productImageFallback, productImageUrl } from '../utils/productImage'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
-const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
@@ -146,11 +166,24 @@ const resolvedId = computed(() => {
   return Number.isNaN(parsed) ? null : parsed
 })
 
-const displayImages = computed<ProductImage[]>(() => {
+const displayImages = computed<string[]>(() => {
   if (!detail.value) return []
-  const images = detail.value.images
-  return images.length > 0 ? images : []
+  const fromGallery = detail.value.images
+    .map((img) => productImageUrl(img.url))
+    .filter((url): url is string => Boolean(url))
+  if (fromGallery.length > 0) return fromGallery
+  const thumb = productImageUrl(detail.value.product.thumbnailUrl)
+  return thumb ? [thumb] : []
 })
+
+const fallbackSrc = computed(() =>
+  productImageFallback(detail.value?.product.name ?? 'Product'),
+)
+
+function onDetailImageError(event: Event): void {
+  const img = event.target as HTMLImageElement
+  img.src = fallbackSrc.value
+}
 
 const formattedPrice = computed(() =>
   detail.value ? formatPrice(detail.value.product.price) : '',
@@ -164,18 +197,16 @@ const selectedStock = computed(() => {
 })
 
 const addButtonText = computed(() => {
-  if (detail.value && detail.value.product.stock <= 0) return 'Out of stock'
-  if (selectedStock.value <= 0) return 'Out of stock'
-  if (added.value) return 'Added!'
-  return 'Add to Cart'
+  if (detail.value && detail.value.product.stock <= 0) return 'Sold out'
+  if (selectedStock.value <= 0) return 'Sold out'
+  if (added.value) return 'Added'
+  return 'Add to cart'
 })
 
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
-}
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-function goBack(): void {
-  router.push('/')
+function formatPrice(value: number): string {
+  return currencyFormatter.format(value)
 }
 
 async function addToCart(): Promise<void> {
@@ -248,59 +279,54 @@ watchEffect(async () => {
 
 <style scoped>
 .product-detail {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  padding-block: var(--sp-5) var(--sp-9);
 }
 
-.status {
-  padding: 2rem;
-  text-align: center;
-  color: #6b7280;
+/* Breadcrumb ----------------------------------------------------------- */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-6);
+  font-size: var(--fs-sm);
 }
-.status.error {
-  color: #dc2626;
+.crumb {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease);
 }
-.status.not-found {
-  color: #374151;
+.crumb:hover {
+  color: var(--ink);
+}
+.crumb.current {
+  color: var(--ink);
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sep {
+  color: var(--line-strong);
 }
 
-.back {
-  display: inline-flex;
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-}
-.back:hover {
-  background: #f3f4f6;
-}
-
+/* Layout --------------------------------------------------------------- */
 .layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-@media (max-width: 768px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--sp-8);
+  align-items: start;
 }
 
 .media {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  min-height: 300px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  min-height: 360px;
   overflow: hidden;
+  position: sticky;
+  top: calc(var(--sp-7) + var(--sp-4));
 }
-.main-image img,
+.main-image,
 .gallery-image {
   width: 100%;
   height: 100%;
@@ -309,127 +335,137 @@ watchEffect(async () => {
 }
 .gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem;
-}
-.placeholder {
-  color: #9ca3af;
-  font-size: 0.9rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  padding: var(--sp-2);
 }
 
+/* Info ----------------------------------------------------------------- */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding-top: var(--sp-2);
+}
 .info h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
-  color: #111827;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
 }
 .price {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.5rem;
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-top: -var(--sp-1);
 }
 .stock {
-  font-size: 0.9rem;
-  color: #059669;
-  margin: 0 0 1rem;
-}
-.stock.out {
-  color: #dc2626;
-}
-.description {
-  line-height: 1.5;
-  color: #4b5563;
-  white-space: pre-line;
+  margin-top: -var(--sp-2);
 }
 
 .add-to-cart {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--sp-3);
   align-items: flex-end;
-  margin-bottom: 1rem;
+  padding-block: var(--sp-4);
+  border-block: 1px solid var(--line);
 }
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: #374151;
+.variant-field {
+  flex: 1 1 100%;
 }
-
+.variant-field .select {
+  min-width: 14rem;
+}
 .quantity-field input {
-  width: 4rem;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font: inherit;
+  width: 5rem;
 }
-
-.field select {
-  min-width: 12rem;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font: inherit;
-  background: #fff;
-}
-
 .add-button {
-  padding: 0.55rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: #111827;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 10rem;
 }
-.add-button:hover:not(:disabled) {
-  background: #374151;
-}
-.add-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .add-error {
-  width: 100%;
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  color: #dc2626;
-  font-size: 0.85rem;
+  flex-basis: 100%;
+  padding: 0.5rem 0.85rem;
+  width: fit-content;
 }
 
+.description {
+  line-height: 1.7;
+  color: var(--body);
+  white-space: pre-line;
+  max-width: 60ch;
+}
+
+/* Variants table ------------------------------------------------------- */
 .variants {
-  margin-top: 2rem;
+  margin-top: var(--sp-9);
 }
 .variants h2 {
-  font-size: 1.25rem;
-  color: #111827;
-  margin-bottom: 0.75rem;
+  font-size: var(--fs-lg);
+  margin-bottom: var(--sp-4);
 }
 .variants-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
 }
-.variants-table th,
-.variants-table td {
-  border: 1px solid #e5e7eb;
-  padding: 0.6rem 0.75rem;
-  text-align: left;
+
+/* Status --------------------------------------------------------------- */
+.status {
+  text-align: center;
+  padding: var(--sp-9) var(--sp-4);
 }
-.variants-table th {
-  background: #f9fafb;
-  color: #374151;
-  font-weight: 600;
+.status h1 {
+  font-size: var(--fs-xl);
 }
-.variants-table td {
-  color: #4b5563;
+.status-copy {
+  color: var(--muted);
+  margin-block: var(--sp-3) var(--sp-5);
+}
+.status.error .status-copy {
+  color: var(--danger);
+}
+
+/* Skeleton ------------------------------------------------------------- */
+.line {
+  height: 1rem;
+  border-radius: var(--r-sm);
+}
+.h-xl {
+  height: 2rem;
+}
+.h-lg {
+  height: 1.5rem;
+}
+.h-btn {
+  height: 2.6rem;
+}
+.w-30 {
+  width: 30%;
+}
+.w-40 {
+  width: 40%;
+}
+.w-60 {
+  width: 60%;
+}
+.w-80 {
+  width: 80%;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--sp-6);
+  }
+  .media {
+    position: static;
+    min-height: 280px;
+  }
+  .info h1 {
+    font-size: var(--fs-xl);
+  }
 }
 </style>

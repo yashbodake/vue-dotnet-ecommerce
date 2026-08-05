@@ -72,18 +72,23 @@ public sealed partial class CheckoutService
         {
             // Load the authenticated user's cart with product/variant details.
             var cartLines = LoadCartLines(connection, transaction, userId);
-            if (cartLines.Count == 0)
+            var validCartLines = cartLines.Where(l => l.Quantity > 0).ToList();
+            if (validCartLines.Count == 0)
             {
                 throw new InvalidOperationException("Your cart is empty.");
             }
 
+            // Batch load product and variant details (with row locks) for all cart lines.
+            var productLookup = LoadProductStockInfo(connection, transaction, validCartLines);
+            var variantLookup = LoadVariantStockInfo(connection, transaction, validCartLines);
+
             // Re-validate each product line: active + sufficient stock, then decrement.
             decimal orderTotal = 0;
             var validatedLines = new List<CartLine>();
-            foreach (var line in cartLines)
+            foreach (var line in validCartLines)
             {
                 var (unitPrice, productName, variantName) = ValidateAndDecrementStock(
-                    connection, transaction, line);
+                    connection, transaction, line, productLookup, variantLookup);
 
                 var lineTotal = unitPrice * line.Quantity;
                 orderTotal += lineTotal;
@@ -286,67 +291,123 @@ public sealed partial class CheckoutService
         return lines;
     }
 
-    private static (decimal unitPrice, string productName, string? variantName) ValidateAndDecrementStock(
-        SqlConnection connection, SqlTransaction transaction, CartLine line)
+    private static Dictionary<int, ProductStockInfo> LoadProductStockInfo(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        List<CartLine> lines)
     {
-        bool isActive;
-        int productStock;
-        string productName;
+        var lookup = new Dictionary<int, ProductStockInfo>();
+        var productIds = lines
+            .Select(l => l.ProductId)
+            .Distinct()
+            .ToList();
 
-        using (var productCommand = new SqlCommand(
-            "SELECT Name, Price, Stock, IsActive " +
-            "FROM dbo.Product " +
-            "WHERE ProductId = @ProductId",
-            connection, transaction))
+        if (productIds.Count == 0)
         {
-            productCommand.Parameters.AddWithValue("@ProductId", line.ProductId);
-
-            using var reader = productCommand.ExecuteReader();
-            if (!reader.Read())
-            {
-                throw new InvalidOperationException($"Product {line.ProductId} is not available.");
-            }
-
-            productName = reader.GetString(0);
-            var productPrice = reader.GetDecimal(1);
-            productStock = reader.GetInt32(2);
-            isActive = reader.GetBoolean(3);
-
-            if (!isActive)
-            {
-                throw new InvalidOperationException($"Product '{productName}' is not available.");
-            }
-
-            line.UnitPrice = productPrice;
+            return lookup;
         }
+
+        var parameterNames = string.Join(", ", productIds.Select((_, i) => $"@ProductId{i}"));
+        using var command = new SqlCommand(
+            "SELECT ProductId, Name, Price, Stock, IsActive " +
+            "FROM dbo.Product WITH (UPDLOCK, ROWLOCK) " +
+            $"WHERE ProductId IN ({parameterNames})",
+            connection, transaction);
+
+        for (var i = 0; i < productIds.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@ProductId{i}", productIds[i]);
+        }
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            lookup[reader.GetInt32(0)] = new ProductStockInfo(
+                reader.GetString(1),
+                reader.GetDecimal(2),
+                reader.GetInt32(3),
+                reader.GetBoolean(4));
+        }
+
+        return lookup;
+    }
+
+    private static Dictionary<(int ProductId, int VariantId), VariantStockInfo> LoadVariantStockInfo(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        List<CartLine> lines)
+    {
+        var lookup = new Dictionary<(int ProductId, int VariantId), VariantStockInfo>();
+        var variants = lines
+            .Where(l => l.ProductVariantId.HasValue)
+            .Select(l => (l.ProductId, VariantId: l.ProductVariantId!.Value))
+            .Distinct()
+            .ToList();
+
+        if (variants.Count == 0)
+        {
+            return lookup;
+        }
+
+        var parameterNames = string.Join(", ", variants.Select((_, i) => $"@VariantId{i}"));
+        using var command = new SqlCommand(
+            "SELECT ProductId, ProductVariantId, Name, Stock, PriceAdjustment " +
+            "FROM dbo.ProductVariant WITH (UPDLOCK, ROWLOCK) " +
+            $"WHERE ProductVariantId IN ({parameterNames})",
+            connection, transaction);
+
+        for (var i = 0; i < variants.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@VariantId{i}", variants[i].VariantId);
+        }
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            lookup[(reader.GetInt32(0), reader.GetInt32(1))] = new VariantStockInfo(
+                reader.GetString(2),
+                reader.GetInt32(3),
+                reader.GetDecimal(4));
+        }
+
+        return lookup;
+    }
+
+    private static (decimal unitPrice, string productName, string? variantName) ValidateAndDecrementStock(
+        SqlConnection connection, SqlTransaction transaction, CartLine line,
+        Dictionary<int, ProductStockInfo> productLookup,
+        Dictionary<(int ProductId, int VariantId), VariantStockInfo> variantLookup)
+    {
+        if (!productLookup.TryGetValue(line.ProductId, out var productInfo))
+        {
+            throw new InvalidOperationException($"Product {line.ProductId} is not available.");
+        }
+
+        if (!productInfo.IsActive)
+        {
+            throw new InvalidOperationException($"Product '{productInfo.Name}' is not available.");
+        }
+
+        line.UnitPrice = productInfo.Price;
 
         int? variantStock = null;
         string? variantName = null;
         if (line.ProductVariantId.HasValue)
         {
-            using var variantCommand = new SqlCommand(
-                "SELECT Name, Stock, PriceAdjustment " +
-                "FROM dbo.ProductVariant " +
-                "WHERE ProductVariantId = @ProductVariantId AND ProductId = @ProductId",
-                connection, transaction);
-            variantCommand.Parameters.AddWithValue("@ProductVariantId", line.ProductVariantId.Value);
-            variantCommand.Parameters.AddWithValue("@ProductId", line.ProductId);
-
-            using var reader = variantCommand.ExecuteReader();
-            if (!reader.Read())
+            if (!variantLookup.TryGetValue((line.ProductId, line.ProductVariantId.Value), out var variantInfo))
             {
                 throw new InvalidOperationException("Selected product variant is not valid.");
             }
 
-            variantName = reader.GetString(0);
-            variantStock = reader.GetInt32(1);
-            line.UnitPrice += reader.GetDecimal(2);
+            variantName = variantInfo.Name;
+            variantStock = variantInfo.Stock;
+            line.UnitPrice += variantInfo.PriceAdjustment;
         }
 
-        var effectiveStock = variantStock ?? productStock;
+        var effectiveStock = variantStock ?? productInfo.Stock;
         if (effectiveStock < line.Quantity)
         {
-            throw new InvalidOperationException($"Not enough stock available for '{productName}'.");
+            throw new InvalidOperationException($"Not enough stock available for '{productInfo.Name}'.");
         }
 
         // Decrement product stock when there is no variant; otherwise decrement variant stock.
@@ -371,8 +432,11 @@ public sealed partial class CheckoutService
             updateProduct.ExecuteNonQuery();
         }
 
-        return (line.UnitPrice, productName, variantName);
+        return (line.UnitPrice, productInfo.Name, variantName);
     }
+
+    private readonly record struct ProductStockInfo(string Name, decimal Price, int Stock, bool IsActive);
+    private readonly record struct VariantStockInfo(string Name, int Stock, decimal PriceAdjustment);
 
     private static OrderConfirmationDto BuildOrderConfirmation(
         int orderId,

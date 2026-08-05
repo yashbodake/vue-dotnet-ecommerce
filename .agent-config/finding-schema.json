@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ecommerce-redo.local/finding-schema.json",
+  "title": "Agent findings file",
+  "description": "Shared output shape for every review/analysis agent in the Ecommerce-Redo quality system. Each agent writes one file to .agent-results/ matching this schema.",
+  "type": "object",
+  "required": ["agent", "generated_at", "baseline_commit", "findings"],
+  "additionalProperties": true,
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "Name of the producing agent, e.g. security-reviewer.",
+      "enum": [
+        "security-reviewer",
+        "adversarial-tester",
+        "code-bloat-reviewer",
+        "efficiency-reviewer",
+        "repair-agent",
+        "final-verifier"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp the file was written."
+    },
+    "baseline_commit": {
+      "type": "string",
+      "description": "Git commit SHA the findings were produced against (git rev-parse HEAD).",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/finding" }
+    }
+  },
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "severity",
+        "confidence",
+        "file",
+        "line_start",
+        "line_end",
+        "description",
+        "evidence",
+        "reproduction",
+        "recommended_fix",
+        "validation",
+        "status"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique finding ID, prefixed by area (SEC-, ADV-, BLOAT-, PERF-).",
+          "pattern": "^(SEC|ADV|BLOAT|PERF)-[0-9]{3,}$"
+        },
+        "category": {
+          "type": "string",
+          "description": "What class of issue this is, e.g. authorization, nplus1, unused-dependency, concurrency."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low", "info"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0.0 (speculative) to 1.0 (proven with reproduction)."
+        },
+        "file": {
+          "type": "string",
+          "description": "Repo-relative path to the offending file (or the test file for adversarial findings)."
+        },
+        "line_start": { "type": "integer", "minimum": 0 },
+        "line_end": { "type": "integer", "minimum": 0 },
+        "description": {
+          "type": "string",
+          "description": "What is wrong, in one or two sentences."
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Exact code, scanner hit, or measurement that proves the issue is real."
+        },
+        "reproduction": {
+          "type": "string",
+          "description": "Concrete steps, command, or curl to reproduce."
+        },
+        "recommended_fix": {
+          "type": "string",
+          "description": "Minimal change that addresses the finding without violating global rules."
+        },
+        "validation": {
+          "description": "How the fix is proven. Either a string (test command/description) or, for high/critical efficiency findings, an object with method/baseline/target per benchmark-policy.md.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "required": ["method", "baseline", "target"],
+              "additionalProperties": true,
+              "properties": {
+                "method": { "type": "string" },
+                "baseline": { "type": "string" },
+                "target": { "type": "string" }
+              }
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle state of the finding.",
+          "enum": ["unconfirmed", "confirmed", "fixed", "wontfix", "false-positive"]
+        }
+      }
+    }
+  }
+}

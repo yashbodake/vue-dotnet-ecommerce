@@ -254,11 +254,13 @@ public class CartTests : IDisposable
         return ownerId;
     }
 
+    // Test isolation: use a product with enough stock for the common quantities used
+    // in this class (up to 6 in merge tests). ORDER BY NEWID() avoids hot-spotting one SKU.
     private int? GetFirstInStockProductId()
     {
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
         using var command = new SqlCommand(
-            "SELECT TOP 1 ProductId FROM dbo.Product WHERE IsActive = 1 AND Stock > 0",
+            "SELECT TOP 1 ProductId FROM dbo.Product WHERE IsActive = 1 AND Stock >= 10 ORDER BY NEWID()",
             connection);
         var result = command.ExecuteScalar();
         return result != null ? (int?)result : null;
@@ -268,7 +270,7 @@ public class CartTests : IDisposable
     {
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
         using var command = new SqlCommand(
-            "SELECT TOP 1 ProductId, Stock FROM dbo.Product WHERE IsActive = 1 AND Stock > 0",
+            "SELECT TOP 1 ProductId, Stock FROM dbo.Product WHERE IsActive = 1 AND Stock >= 10 ORDER BY NEWID()",
             connection);
         using var reader = command.ExecuteReader();
         if (reader.Read())

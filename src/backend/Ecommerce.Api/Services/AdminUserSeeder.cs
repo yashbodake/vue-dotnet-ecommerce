@@ -81,15 +81,9 @@ public sealed class AdminUserSeeder
         if (existingId != null)
         {
             userId = existingId;
-            // Update password hash to ensure our format works (parity with documented Admin123!)
-            var passwordHash = HashPassword(AdminPassword);
-            using var update = new SqlCommand(
-                "UPDATE dbo.AspNetUsers SET PasswordHash = @PasswordHash WHERE Id = @Id",
-                connection);
-            update.Parameters.AddWithValue("@PasswordHash", passwordHash);
-            update.Parameters.AddWithValue("@Id", userId);
-            update.ExecuteNonQuery();
-            _logger.LogInformation("Admin user already exists, password hash updated");
+            // Do NOT overwrite the password hash for an existing admin user.
+            // This preserves any operator-initiated password change while still ensuring the role assignment below.
+            _logger.LogInformation("Admin user already exists; preserving existing password hash");
         }
         else
         {

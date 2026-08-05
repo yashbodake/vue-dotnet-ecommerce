@@ -1,0 +1,45 @@
+# Paths excluded from automated review/analysis.
+# One glob per line. Lines starting with '#' are comments. Blank lines ignored.
+# Analysis agents (security-reviewer, code-bloat-reviewer, efficiency-reviewer)
+# skip these unless explicitly investigating one.
+
+# --- Build output ---
+**/bin/**
+**/obj/**
+**/Debug/**
+**/Release/**
+
+# --- Node / frontend build & cache ---
+**/node_modules/**
+**/dist/**
+**/.vite/**
+
+# --- Test artifacts ---
+**/playwright-report/**
+**/test-results/**
+
+# --- Lockfiles (not reviewable source) ---
+package-lock.json
+
+# --- EF/migration history (none in use, but defensive) ---
+**/Migrations/**
+
+# --- Agent system itself (self-referential) ---
+agent-kit/**
+.zcode/**
+.agent-config/**
+.agent-results/**
+
+# --- VCS / editor ---
+.git/**
+.vs/
+.idea/
+.cursor/**
+
+# --- Database seed scripts (reviewed separately if needed) ---
+database/*.sql
+
+# --- OS cruft ---
+Thumbs.db
+Desktop.ini
+.DS_Store

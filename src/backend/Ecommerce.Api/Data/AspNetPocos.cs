@@ -19,12 +19,3 @@ public sealed class AspNetUser
     public int AccessFailedCount { get; set; }
     public string UserName { get; set; } = string.Empty;
 }
-
-/// <summary>
-/// POCO for AspNetRoles table.
-/// </summary>
-public sealed class AspNetRole
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-}

@@ -131,7 +131,8 @@ public class CheckoutTests : IDisposable
         var product = GetFirstActiveProduct();
         if (!product.HasValue) return;
 
-        var quantity = product.Value.Stock + 10;
+        // Use a fixed oversell quantity that exceeds any selected product's 10-unit threshold.
+        var quantity = product.Value.Stock + 5;
         InsertCartItem(userId, product.Value.ProductId, quantity, null);
 
         var exception = Assert.Throws<InvalidOperationException>(
@@ -195,11 +196,13 @@ public class CheckoutTests : IDisposable
         };
     }
 
+    // Test isolation: pick a product with at least 10 stock so oversell and concurrent tests
+    // are not blocked by other tests having depleted the first positive-stock SKU.
     private (int ProductId, decimal Price, int Stock)? GetFirstActiveProduct()
     {
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
         using var command = new SqlCommand(
-            "SELECT TOP 1 ProductId, Price, Stock FROM dbo.Product WHERE IsActive = 1 AND Stock > 0",
+            "SELECT TOP 1 ProductId, Price, Stock FROM dbo.Product WHERE IsActive = 1 AND Stock >= 10 ORDER BY NEWID()",
             connection);
         using var reader = command.ExecuteReader();
         if (reader.Read())
@@ -215,7 +218,7 @@ public class CheckoutTests : IDisposable
         using var command = new SqlCommand(
             "SELECT TOP 1 pv.ProductVariantId, pv.ProductId " +
             "FROM dbo.ProductVariant pv INNER JOIN dbo.Product p ON pv.ProductId = p.ProductId " +
-            "WHERE p.IsActive = 1 AND pv.Stock > 0",
+            "WHERE p.IsActive = 1 AND pv.Stock >= 10 ORDER BY NEWID()",
             connection);
         using var reader = command.ExecuteReader();
         if (reader.Read())

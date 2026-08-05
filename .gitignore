@@ -37,3 +37,13 @@ appsettings.*.local.json
 **/dist/
 **/playwright-report/
 **/test-results/
+
+## Agent quality-review output (keep the dir, ignore transient findings)
+.agent-results/*
+!.agent-results/.gitkeep
+
+# dev.sh runtime artefacts (pid files + logs)
+.run/
+
+# ZCode session data
+.zcode/

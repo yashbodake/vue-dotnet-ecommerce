@@ -66,7 +66,16 @@ builder.Services.AddCors(options =>
 });
 
 // Configure JWT authentication
-var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]!;
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"];
+const string JwtSigningKeyPlaceholder = "REPLACE_VIA_JWT_SIGNINGKEY_ENV_OR_SECRETS";
+if (builder.Environment.IsProduction()
+    && (string.IsNullOrWhiteSpace(jwtSigningKey) || jwtSigningKey == JwtSigningKeyPlaceholder))
+{
+    throw new InvalidOperationException(
+        "JWT signing key is not configured. Set a strong secret via the Jwt:SigningKey configuration " +
+        "(e.g. ASPNETCORE_Jwt__SigningKey environment variable) and remove the placeholder value.");
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -82,7 +91,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey ?? JwtSigningKeyPlaceholder)),
         ClockSkew = TimeSpan.Zero
     };
 });
@@ -106,6 +115,11 @@ if (!app.Environment.IsEnvironment("Testing"))
     using var scope = app.Services.CreateScope();
     var seeder = scope.ServiceProvider.GetRequiredService<AdminUserSeeder>();
     seeder.EnsureAdminUser();
+
+    // Warm the SQL connection pool so the first shop request is not a cold login.
+    var connectionFactory = scope.ServiceProvider.GetRequiredService<ISqlConnectionFactory>();
+    using var warm = connectionFactory.CreateConnection();
+    CatalogHealthQuery.Execute(warm);
 }
 
 app.UseCors("AllowGateway");
@@ -114,7 +128,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Health endpoint - smoke test for database connectivity
-app.MapGet("/api/health", (ISqlConnectionFactory connectionFactory) =>
+app.MapGet("/api/health", (ISqlConnectionFactory connectionFactory, ILogger<Program> logger) =>
 {
     try
     {
@@ -124,7 +138,8 @@ app.MapGet("/api/health", (ISqlConnectionFactory connectionFactory) =>
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Database connection failed: {ex.Message}");
+        logger.LogError(ex, "Health check failed: database connectivity error");
+        return Results.Problem("Database connection failed.", statusCode: 503);
     }
 });
 

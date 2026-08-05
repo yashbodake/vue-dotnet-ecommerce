@@ -21,7 +21,7 @@ public class AuthTests
         factory ??= CreateFactory();
         return new AuthService(
             factory,
-            "ThisIsAVeryLongSigningKeyForJWT_32CharsOrMore!",
+            TestJwtKey.Value,
             "EcommerceModernApi",
             "EcommerceModernClient",
             60

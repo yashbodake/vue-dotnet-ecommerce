@@ -12,6 +12,8 @@ namespace Ecommerce.Api.Services;
 /// </summary>
 public sealed class ProductCatalogService
 {
+    private const int MaxSearchLength = 100;
+
     private readonly ISqlConnectionFactory _connectionFactory;
 
     public ProductCatalogService(ISqlConnectionFactory connectionFactory)
@@ -61,35 +63,39 @@ public sealed class ProductCatalogService
     {
         using var connection = (SqlConnection)_connectionFactory.CreateConnection();
 
-        // Get product
-        using var cmdProduct = new SqlCommand("""
+        // Batch the product, images, and variant reads into a single command / single round-trip
+        using var command = new SqlCommand("""
             SELECT ProductId, CategoryId, Name, Description, Price, ThumbnailUrl, Stock, IsActive, CreatedDate
             FROM dbo.Product
-            WHERE ProductId = @ProductId AND IsActive = 1
+            WHERE ProductId = @ProductId AND IsActive = 1;
+
+            SELECT ProductImageId, ProductId, Url, DisplayOrder
+            FROM dbo.ProductImage
+            WHERE ProductId = @ProductId
+            ORDER BY DisplayOrder;
+
+            SELECT ProductVariantId, ProductId, Name, SkuSuffix, Stock, PriceAdjustment
+            FROM dbo.ProductVariant
+            WHERE ProductId = @ProductId;
             """, connection);
-        cmdProduct.Parameters.AddWithValue("@ProductId", productId);
+        command.Parameters.AddWithValue("@ProductId", productId);
 
         ProductDto? product = null;
-        using (var reader = cmdProduct.ExecuteReader())
+        var images = new List<ProductImageDto>();
+        var variants = new List<ProductVariantDto>();
+
+        using var reader = command.ExecuteReader();
+
+        // First result set: product
+        if (reader.Read())
         {
-            if (reader.Read())
-            {
-                product = MapProduct(reader);
-            }
+            product = MapProduct(reader);
         }
 
         if (product == null) return null;
 
-        // Get images
-        var images = new List<ProductImageDto>();
-        using var cmdImages = new SqlCommand("""
-            SELECT ProductImageId, ProductId, Url, DisplayOrder
-            FROM dbo.ProductImage
-            WHERE ProductId = @ProductId
-            ORDER BY DisplayOrder
-            """, connection);
-        cmdImages.Parameters.AddWithValue("@ProductId", productId);
-        using (var reader = cmdImages.ExecuteReader())
+        // Second result set: images
+        if (reader.NextResult())
         {
             while (reader.Read())
             {
@@ -103,15 +109,8 @@ public sealed class ProductCatalogService
             }
         }
 
-        // Get variants
-        var variants = new List<ProductVariantDto>();
-        using var cmdVariants = new SqlCommand("""
-            SELECT ProductVariantId, ProductId, Name, SkuSuffix, Stock, PriceAdjustment
-            FROM dbo.ProductVariant
-            WHERE ProductId = @ProductId
-            """, connection);
-        cmdVariants.Parameters.AddWithValue("@ProductId", productId);
-        using (var reader = cmdVariants.ExecuteReader())
+        // Third result set: variants
+        if (reader.NextResult())
         {
             while (reader.Read())
             {
@@ -183,7 +182,13 @@ public sealed class ProductCatalogService
 
         if (!string.IsNullOrWhiteSpace(criteria.Search))
         {
-            parameters["@search"] = $"%{criteria.Search.Trim()}%";
+            var searchTerm = criteria.Search.Trim();
+            if (searchTerm.Length > MaxSearchLength)
+            {
+                searchTerm = searchTerm[..MaxSearchLength];
+            }
+
+            parameters["@search"] = $"%{searchTerm}%";
             whereClauses.Add("(p.Name LIKE @search OR (p.Description IS NOT NULL AND p.Description LIKE @search))");
         }
 

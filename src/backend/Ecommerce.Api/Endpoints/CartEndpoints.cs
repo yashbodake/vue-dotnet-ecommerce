@@ -187,12 +187,15 @@ public static class CartEndpoints
 
     private static void AppendCartOwnerCookie(HttpContext context, string ownerId)
     {
+        // Secure cookies when served over HTTPS (production / TLS termination), but preserve
+        // plain-HTTP local dev e2e behaviour by gating on IsHttps.
         context.Response.Cookies.Append("ecommerce.cart_owner", ownerId, new CookieOptions
         {
             HttpOnly = true,
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(30),
-            Path = "/"
+            Path = "/",
+            Secure = context.Request.IsHttps
         });
     }
 }

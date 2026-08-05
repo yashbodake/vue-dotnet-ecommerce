@@ -27,7 +27,7 @@ public class AccountTests : IDisposable
 
     private AuthService CreateAuthService() => new(
         _connectionFactory,
-        "ThisIsAVeryLongSigningKeyForJWT_32CharsOrMore!",
+        TestJwtKey.Value,
         "EcommerceModernApi",
         "EcommerceModernClient",
         60
