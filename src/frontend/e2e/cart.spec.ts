@@ -14,7 +14,7 @@ test.describe('cart operations', () => {
     await expect(cartBadge).toBeVisible({ timeout: 5000 })
     await expect(cartBadge).toHaveText(/[1-9]/)
 
-    await page.getByRole('link', { name: /cart/i }).click()
+    await page.locator('header .primary-nav .cart-link').click()
     await expect(page).toHaveURL(/\/cart/)
 
     const cartItem = page.locator('.item').first()
@@ -30,7 +30,7 @@ test.describe('cart operations', () => {
     await expect(quantityInput).toHaveValue('2')
 
     await cartItem.getByRole('button', { name: 'Remove' }).click()
-    await expect(page.locator('.empty')).toContainText('Your cart is empty')
+    await expect(page.locator('.empty')).toContainText(/Your bag is empty|Your cart is empty/)
     await expect(cartBadge).toHaveCount(0)
   })
 })

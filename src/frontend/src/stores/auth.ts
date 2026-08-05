@@ -2,7 +2,7 @@
 // `ecommerce.token` so it survives reloads within the browser session.
 
 import { defineStore } from 'pinia'
-import { login as loginApi, getMe } from '../api/auth'
+import { login as loginApi, register as registerApi } from '../api/auth'
 
 const TOKEN_KEY = 'ecommerce.token'
 const EMAIL_KEY = 'ecommerce.email'
@@ -27,6 +27,19 @@ export const useAuthStore = defineStore('auth', {
     /** Authenticate against the API and persist the token. */
     async login(email: string, password: string): Promise<void> {
       const res = await loginApi(email, password)
+      this.token = res.token
+      this.email = res.email
+      this.roles = res.roles ?? []
+      this.isAuthenticated = true
+
+      sessionStorage.setItem(TOKEN_KEY, res.token)
+      sessionStorage.setItem(EMAIL_KEY, res.email)
+      sessionStorage.setItem(ROLES_KEY, JSON.stringify(this.roles))
+    },
+
+    /** Register a new customer account; on success the API returns a JWT (same as login). */
+    async register(email: string, password: string): Promise<void> {
+      const res = await registerApi(email, password)
       this.token = res.token
       this.email = res.email
       this.roles = res.roles ?? []
@@ -73,5 +86,3 @@ function safeParse(raw: string): string[] {
   }
 }
 
-// Re-export for callers that need to hydrate the user from /me.
-export { getMe }

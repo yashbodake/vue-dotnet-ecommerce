@@ -9,7 +9,7 @@ test.describe('checkout flow', () => {
 
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL('/')
-    await expect(page.locator('.user')).toContainText('admin@legacy.local')
+    await expect(page.locator('.primary-nav .user-name')).toContainText('admin@legacy.local')
 
     await page.goto('/')
     const firstCard = page.locator('.product-card').first()
@@ -19,7 +19,7 @@ test.describe('checkout flow', () => {
     const cartBadge = page.locator('.badge')
     await expect(cartBadge).toBeVisible({ timeout: 5000 })
 
-    await page.getByRole('link', { name: /cart/i }).click()
+    await page.locator('header .primary-nav .cart-link').click()
     await expect(page).toHaveURL(/\/cart/)
     await page.getByRole('link', { name: /proceed to checkout/i }).click()
     await expect(page).toHaveURL(/\/checkout/)
@@ -39,10 +39,11 @@ test.describe('checkout flow', () => {
 
     await page.getByRole('button', { name: /continue to payment/i }).click()
 
-    await page.getByRole('textbox', { name: /card name/i }).fill('Test User')
-    await page.getByRole('textbox', { name: /card number/i }).fill('4111111111111111')
-    await page.getByRole('textbox', { name: /expiry/i }).fill('12/28')
-    await page.getByRole('textbox', { name: /cvv/i }).fill('123')
+    // Card inputs have no type="text" so Playwright does not expose them as textboxes; use ids.
+    await page.locator('#cardName').fill('Test User')
+    await page.locator('#cardNumber').fill('4111111111111111')
+    await page.locator('#expiry').fill('12/28')
+    await page.locator('#cvv').fill('123')
 
     await page.getByRole('button', { name: 'Place Order' }).click()
 

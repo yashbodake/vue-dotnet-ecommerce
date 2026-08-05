@@ -1,82 +1,107 @@
 <template>
-  <div class="cart">
-    <h1>Shopping Cart</h1>
+  <div class="cart container">
+    <header class="page-head">
+      <span class="eyebrow">Cart</span>
+      <h1>Your bag</h1>
+    </header>
 
-    <div v-if="cartStore.loading" class="status" aria-live="polite">Loading cart...</div>
+    <div v-if="cartStore.loading" class="items-skeleton" aria-live="polite">
+      <div v-for="n in 3" :key="n" class="skeleton-row">
+        <div class="skeleton thumb-s"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton line w-60"></div>
+          <div class="skeleton line w-30"></div>
+        </div>
+      </div>
+    </div>
 
     <div v-else-if="cartStore.error" class="status error" aria-live="polite">
       {{ cartStore.error }}
     </div>
 
-    <div v-else-if="cartStore.isEmpty" class="status empty">
-      <p>Your cart is empty.</p>
-      <RouterLink to="/" class="button-link">Continue shopping</RouterLink>
+    <div v-else-if="cartStore.isEmpty" class="empty">
+      <h2>Your bag is empty.</h2>
+      <p class="status-copy">When you find something you love, it will gather here.</p>
+      <RouterLink to="/" class="btn btn-primary">Browse the catalogue</RouterLink>
     </div>
 
     <div v-else class="cart-content">
       <ul class="items">
         <li v-for="item in cartStore.items" :key="item.cartItemId" class="item">
-          <div class="item-main">
-            <div class="item-info">
-              <p class="name">{{ item.productName }}</p>
-              <p v-if="item.variantName" class="variant">
-                {{ item.variantName }}
-                <span v-if="item.variantSkuSuffix" class="sku">({{ item.variantSkuSuffix }})</span>
-              </p>
-              <p class="unit-price">{{ formatPrice(item.productPrice + item.priceAdjustment) }} each</p>
-            </div>
+          <div class="item-thumb">
+            <img :src="thumbFor(item)" :alt="item.productName" @error="onThumbError($event, item.productName)" />
+          </div>
 
-            <div class="quantity">
-              <button
-                type="button"
-                :disabled="item.quantity <= 1 || cartStore.loading"
-                @click="changeQuantity(item.cartItemId, item.quantity - 1)"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min="1"
-                :max="item.stock"
-                v-model.number="localQuantities[item.cartItemId]"
-                @change="onQuantityInput(item.cartItemId)"
-                aria-label="Quantity"
-              />
-              <button
-                type="button"
-                :disabled="item.quantity >= item.stock || cartStore.loading"
-                @click="changeQuantity(item.cartItemId, item.quantity + 1)"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
+          <div class="item-info">
+            <p class="name">{{ item.productName }}</p>
+            <p v-if="item.variantName" class="variant">
+              {{ item.variantName }}
+              <span v-if="item.variantSkuSuffix" class="sku">({{ item.variantSkuSuffix }})</span>
+            </p>
+            <p class="unit-price tabular">{{ formatPrice(item.productPrice + item.priceAdjustment) }} each</p>
+          </div>
 
-            <div class="line-total">{{ formatPrice(item.lineTotal) }}</div>
-
+          <div class="quantity">
             <button
               type="button"
-              class="remove"
-              :disabled="cartStore.loading"
-              @click="remove(item.cartItemId)"
+              class="qty-btn"
+              :disabled="item.quantity <= 1 || cartStore.loading"
+              @click="changeQuantity(item.cartItemId, item.quantity - 1)"
+              aria-label="Decrease quantity"
             >
-              Remove
+              −
+            </button>
+            <input
+              type="number"
+              class="input qty-input tabular"
+              min="1"
+              :max="item.stock"
+              v-model.number="localQuantities[item.cartItemId]"
+              @change="onQuantityInput(item.cartItemId)"
+              aria-label="Quantity"
+            />
+            <button
+              type="button"
+              class="qty-btn"
+              :disabled="item.quantity >= item.stock || cartStore.loading"
+              @click="changeQuantity(item.cartItemId, item.quantity + 1)"
+              aria-label="Increase quantity"
+            >
+              +
             </button>
           </div>
+
+          <div class="line-total tabular">{{ formatPrice(item.lineTotal) }}</div>
+
+          <button
+            type="button"
+            class="btn-link remove"
+            :disabled="cartStore.loading"
+            @click="remove(item.cartItemId)"
+          >
+            Remove
+          </button>
         </li>
       </ul>
 
-      <div class="summary">
-        <p class="subtotal">
-          <span>Subtotal</span>
-          <span>{{ formatPrice(cartStore.total) }}</span>
-        </p>
-        <div class="actions">
-          <RouterLink to="/" class="button-link secondary">Continue shopping</RouterLink>
-          <RouterLink to="/checkout" class="button-link checkout">Proceed to checkout</RouterLink>
+      <aside class="summary">
+        <h2 class="summary-title">Order summary</h2>
+        <div class="summary-row">
+          <span class="muted">Subtotal</span>
+          <span class="tabular">{{ formatPrice(cartStore.total) }}</span>
         </div>
-      </div>
+        <div class="summary-row">
+          <span class="muted">Shipping</span>
+          <span class="muted">Calculated at checkout</span>
+        </div>
+        <hr class="divider" />
+        <div class="summary-row total">
+          <span>Total</span>
+          <span class="tabular">{{ formatPrice(cartStore.total) }}</span>
+        </div>
+        <RouterLink to="/checkout" class="btn btn-primary block">Proceed to checkout</RouterLink>
+        <RouterLink to="/" class="btn-link continue">Continue shopping</RouterLink>
+      </aside>
     </div>
   </div>
 </template>
@@ -85,14 +110,14 @@
 import { reactive, watch, onMounted } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
+import { productImageFallback } from '../utils/productImage'
+import type { CartItem } from '../api/cart'
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const localQuantities = reactive<Record<number, number>>({})
 
-// Fetch the full cart when the page loads so a direct visit to /cart
-// shows current contents, not just the badge count from App.vue.
 onMounted(() => {
   cartStore.fetchCart(authStore.isAuthenticated)
 })
@@ -111,6 +136,15 @@ watch(
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+}
+
+function thumbFor(item: CartItem): string {
+  return productImageFallback(item.productName)
+}
+
+function onThumbError(event: Event, name: string): void {
+  const img = event.target as HTMLImageElement
+  img.src = productImageFallback(name)
 }
 
 function changeQuantity(cartItemId: number, quantity: number): void {
@@ -147,179 +181,248 @@ function remove(cartItemId: number): void {
 
 <style scoped>
 .cart {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  padding-block: var(--sp-8) var(--sp-9);
+  max-width: var(--maxw);
 }
 
-.cart h1 {
-  margin: 0 0 1.25rem;
-  font-size: 1.75rem;
-  color: #111827;
+.page-head {
+  margin-bottom: var(--sp-7);
+}
+.page-head h1 {
+  margin-top: var(--sp-2);
 }
 
-.status {
-  padding: 2rem;
+/* Status / empty ------------------------------------------------------- */
+.status,
+.empty {
   text-align: center;
-  color: #6b7280;
+  padding: var(--sp-9) var(--sp-4);
 }
 .status.error {
-  color: #dc2626;
+  color: var(--danger);
 }
-.status.empty p {
-  margin: 0 0 1rem;
+.empty h2 {
+  font-size: var(--fs-xl);
+}
+.status-copy {
+  color: var(--muted);
+  margin-block: var(--sp-3) var(--sp-5);
+}
+
+/* Skeleton ------------------------------------------------------------- */
+.items-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+.skeleton-row {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+}
+.thumb-s {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.line {
+  height: 0.9rem;
+}
+.w-30 {
+  width: 30%;
+}
+.w-60 {
+  width: 60%;
+}
+
+/* Content -------------------------------------------------------------- */
+.cart-content {
+  display: grid;
+  grid-template-columns: 1fr 22rem;
+  gap: var(--sp-7);
+  align-items: start;
 }
 
 .items {
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--line);
 }
 
 .item {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem 0;
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto auto auto;
+  gap: var(--sp-4);
+  align-items: center;
+  padding-block: var(--sp-4);
+  border-bottom: 1px solid var(--line);
 }
 
-.item-main {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 1rem;
-  align-items: center;
+.item-thumb {
+  width: 4.5rem;
+  height: 4.5rem;
+  background: var(--paper-soft);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  flex-shrink: 0;
 }
-@media (max-width: 768px) {
-  .item-main {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
+.item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .item-info {
   min-width: 0;
 }
 .name {
-  margin: 0;
-  font-weight: 600;
-  color: #111827;
+  font-family: var(--sans);
+  font-weight: 500;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
 }
 .variant {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  color: #4b5563;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--muted);
 }
 .sku {
-  color: #9ca3af;
-  margin-left: 0.25rem;
+  margin-left: 0.2rem;
 }
 .unit-price {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-  color: #6b7280;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--muted);
 }
 
 .quantity {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--sp-2);
 }
-.quantity button {
-  width: 1.8rem;
-  height: 1.8rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
+.qty-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: var(--fs-md);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
-.quantity button:disabled {
-  opacity: 0.5;
+.qty-btn:hover:not(:disabled) {
+  background: var(--paper-soft);
+  border-color: var(--ink);
+}
+.qty-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
-.quantity input {
+.qty-input {
   width: 3rem;
   text-align: center;
-  padding: 0.35rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font: inherit;
+  padding-inline: 0;
 }
 
 .line-total {
-  font-weight: 700;
-  color: #111827;
-  min-width: 5rem;
+  font-family: var(--display);
+  font-weight: 500;
+  color: var(--ink);
+  min-width: 5.5rem;
   text-align: right;
+  font-size: var(--fs-md);
 }
 
 .remove {
-  padding: 0.4rem 0.75rem;
-  border: 1px solid #fca5a5;
-  border-radius: 6px;
-  background: #fef2f2;
-  color: #dc2626;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.remove:hover:not(:disabled) {
-  background: #fee2e2;
-}
-.remove:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  font-size: var(--fs-xs);
+  justify-self: end;
 }
 
+/* Summary -------------------------------------------------------------- */
 .summary {
-  margin-top: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-5);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  align-items: flex-end;
+  gap: var(--sp-3);
+  position: sticky;
+  top: calc(var(--sp-7) + var(--sp-4));
 }
-.subtotal {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #111827;
-  display: flex;
-  gap: 1rem;
+.summary-title {
+  font-size: var(--fs-md);
+  margin-bottom: var(--sp-2);
 }
-.actions {
+.summary-row {
   display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--fs-sm);
+}
+.summary-row.total {
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--ink);
+}
+.summary-row.total .tabular {
+  font-family: var(--display);
+}
+.divider {
+  margin-block: var(--sp-1);
+}
+.block {
+  margin-top: var(--sp-3);
+  width: 100%;
+}
+.continue {
+  text-align: center;
+  font-size: var(--fs-sm);
 }
 
-.button-link {
-  display: inline-flex;
-  padding: 0.55rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent, var(--accent));
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.button-link.secondary {
-  background: #fff;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.checkout {
-  padding: 0.55rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: #111827;
-  color: #fff;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.checkout:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+@media (max-width: 900px) {
+  .cart-content {
+    grid-template-columns: 1fr;
+  }
+  .summary {
+    position: static;
+    order: -1;
+  }
+  .item {
+    grid-template-columns: 4.5rem 1fr auto;
+    grid-template-areas:
+      'thumb info total'
+      'thumb quantity remove';
+    row-gap: var(--sp-3);
+  }
+  .item-thumb {
+    grid-area: thumb;
+  }
+  .item-info {
+    grid-area: info;
+  }
+  .quantity {
+    grid-area: quantity;
+  }
+  .line-total {
+    grid-area: total;
+  }
+  .remove {
+    grid-area: remove;
+    justify-self: end;
+  }
 }
 </style>

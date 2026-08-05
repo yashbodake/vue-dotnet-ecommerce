@@ -1,27 +1,28 @@
 <template>
-  <div class="admin-orders">
-    <header class="page-header">
-      <h1>Admin: Orders</h1>
-
-      <label class="status-filter">
-        <span>Status</span>
-        <select v-model="selectedStatus" :disabled="loading" @change="onFilterChange">
+  <div class="admin container">
+    <header class="page-head">
+      <div>
+        <span class="eyebrow">Admin</span>
+        <h1>Orders</h1>
+      </div>
+      <label class="status-filter field-inline">
+        <span class="field-label">Status</span>
+        <select class="select" v-model="selectedStatus" :disabled="loading" @change="onFilterChange">
           <option value="">All</option>
-          <option v-for="status in statuses" :key="status" :value="status">
-            {{ status }}
-          </option>
+          <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
         </select>
       </label>
     </header>
 
-    <div v-if="!authStore.isAuthenticated" class="message error">
+    <div v-if="!authStore.isAuthenticated" class="card message">
       Please <RouterLink to="/login">sign in</RouterLink> to access this page.
     </div>
-    <div v-else-if="!isAdmin" class="message error">Access denied.</div>
-    <div v-else-if="loading" class="message">Loading orders…</div>
-    <div v-else-if="error" class="message error" role="alert">{{ error }}</div>
-    <template v-else>
-      <table class="data-table">
+    <div v-else-if="!isAdmin" class="card message danger">Access denied.</div>
+    <div v-else-if="loading" class="card message">Loading orders…</div>
+    <div v-else-if="error" class="card message danger" role="alert">{{ error }}</div>
+
+    <div v-else class="card table-wrap">
+      <table class="table">
         <thead>
           <tr>
             <th>Order</th>
@@ -33,46 +34,47 @@
         </thead>
         <tbody>
           <tr v-for="order in orders" :key="order.orderId">
-            <td>#{{ order.orderId }}</td>
-            <td>{{ formatDate(order.orderDate) }}</td>
-            <td class="status-cell">
-              <select
-                :value="pendingStatus[order.orderId] ?? order.status"
-                :disabled="savingId === order.orderId"
-                @change="onStatusChange(order.orderId, $event)"
-              >
-                <option v-for="status in statuses" :key="status" :value="status">
-                  {{ status }}
-                </option>
-              </select>
-              <button
-                type="button"
-                class="btn btn-small btn-primary save-btn"
-                :disabled="
-                  savingId === order.orderId ||
-                  (pendingStatus[order.orderId] ?? order.status) === order.status
-                "
-                @click="saveStatus(order.orderId)"
-              >
-                {{ savingId === order.orderId ? 'Saving…' : 'Save' }}
-              </button>
-              <span
-                v-if="feedback[order.orderId]"
-                class="feedback"
-                :class="feedback[order.orderId].type"
-              >
-                {{ feedback[order.orderId].message }}
-              </span>
+            <td class="tabular">#{{ order.orderId }}</td>
+            <td class="muted">{{ formatDate(order.orderDate) }}</td>
+            <td>
+              <div class="status-cell">
+                <select
+                  class="select status-select"
+                  :value="pendingStatus[order.orderId] ?? order.status"
+                  :disabled="savingId === order.orderId"
+                  @change="onStatusChange(order.orderId, $event)"
+                >
+                  <option v-for="status in statuses" :key="status" :value="status">{{ status }}</option>
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  :disabled="
+                    savingId === order.orderId ||
+                    (pendingStatus[order.orderId] ?? order.status) === order.status
+                  "
+                  @click="saveStatus(order.orderId)"
+                >
+                  {{ savingId === order.orderId ? 'Saving…' : 'Save' }}
+                </button>
+                <span
+                  v-if="feedback[order.orderId]"
+                  class="feedback"
+                  :class="feedback[order.orderId].type"
+                >
+                  {{ feedback[order.orderId].message }}
+                </span>
+              </div>
             </td>
-            <td class="numeric">{{ order.itemCount }}</td>
-            <td class="numeric">{{ formatPrice(order.totalAmount) }}</td>
+            <td class="numeric tabular">{{ order.itemCount }}</td>
+            <td class="numeric tabular">{{ formatPrice(order.totalAmount) }}</td>
           </tr>
           <tr v-if="orders.length === 0">
-            <td colspan="5" class="empty">No orders found.</td>
+            <td colspan="5" class="empty muted">No orders found.</td>
           </tr>
         </tbody>
       </table>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -104,11 +106,14 @@ onMounted(() => {
   loadOrders()
 })
 
-watch(() => authStore.isAuthenticated, (authenticated) => {
-  if (!authenticated) {
-    router.push('/login')
-  }
-})
+watch(
+  () => authStore.isAuthenticated,
+  (authenticated) => {
+    if (!authenticated) {
+      router.push('/login')
+    }
+  },
+)
 
 async function loadOrders(): Promise<void> {
   loading.value = true
@@ -191,72 +196,47 @@ function formatPrice(value: number): string {
 </script>
 
 <style scoped>
-.admin-orders {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem;
+.admin {
+  max-width: var(--maxw);
+  padding-block: var(--sp-8) var(--sp-9);
 }
 
-.page-header {
+.page-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+}
+.page-head h1 {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xl);
 }
 
-.page-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--text-h, #08060d);
-}
-
-.status-filter {
+.field-inline {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #374151;
+  align-items: flex-end;
+  gap: var(--sp-3);
 }
-
-.status-filter select {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.3rem;
-  font: inherit;
-  font-size: 0.9rem;
+.field-inline .select {
+  min-width: 10rem;
 }
 
 .message {
-  padding: 1rem;
-  border-radius: 0.3rem;
-  background: #f9fafb;
-  color: #374151;
+  padding: var(--sp-5);
+  font-size: var(--fs-sm);
+}
+.message.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
 }
 
-.message.error {
-  background: rgba(220, 38, 38, 0.08);
-  color: #dc2626;
+.table-wrap {
+  overflow: hidden;
+  padding: 0;
 }
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-}
-
-.data-table th {
-  font-weight: 600;
-  color: #374151;
-  background: #f9fafb;
-}
-
 .numeric {
   text-align: right;
 }
@@ -264,74 +244,27 @@ function formatPrice(value: number): string {
 .status-cell {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
 }
-
-.status-cell select {
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.3rem;
-  font: inherit;
-  font-size: 0.85rem;
-}
-
-.save-btn {
-  flex-shrink: 0;
+.status-select {
+  width: auto;
+  min-width: 8rem;
+  padding-block: 0.4rem;
 }
 
 .feedback {
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
 }
-
 .feedback.success {
-  color: #16a34a;
+  color: var(--success);
 }
-
 .feedback.error {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .empty {
   text-align: center;
-  color: #6b7280;
-  padding: 2rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.3rem;
-  background: #fff;
-  color: #374151;
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.btn:hover:not(:disabled) {
-  background: #f3f4f6;
-}
-
-.btn-primary {
-  background: var(--accent, var(--accent));
-  border-color: var(--accent, var(--accent));
-  color: #fff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
-.btn-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  padding: var(--sp-7);
 }
 </style>

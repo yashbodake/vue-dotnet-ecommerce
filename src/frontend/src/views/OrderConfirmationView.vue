@@ -1,70 +1,77 @@
 <template>
-  <div class="confirmation">
-    <h1>Order Confirmation</h1>
-
-    <div v-if="loading" class="status" aria-live="polite">Loading order...</div>
+  <div class="confirmation container">
+    <div v-if="loading" class="status" aria-live="polite">Loading your order…</div>
 
     <div v-else-if="error" class="status error">
-      <p>{{ error }}</p>
-      <RouterLink to="/" class="button-link">Continue shopping</RouterLink>
+      <h1>Order not found</h1>
+      <p class="status-copy">{{ error }}</p>
+      <RouterLink to="/" class="btn btn-primary">Continue shopping</RouterLink>
     </div>
 
-    <div v-else-if="order" class="order-card">
-      <div class="order-header">
-        <div>
-          <p class="label">Order Number</p>
-          <p class="order-number">#{{ order.orderId }}</p>
-        </div>
-        <div class="order-meta">
-          <div>
-            <p class="label">Order Date</p>
-            <p>{{ formatDate(order.orderDate) }}</p>
-          </div>
-          <div>
-            <p class="label">Status</p>
-            <p class="status-badge">{{ order.status }}</p>
-          </div>
-        </div>
-      </div>
+    <div v-else-if="order" class="order-wrap">
+      <header class="order-intro">
+        <span class="eyebrow">Thank you</span>
+        <h1>Your order is confirmed.</h1>
+        <p class="lede">A receipt is on its way. Below is a summary of your purchase.</p>
+      </header>
 
-      <div class="section">
-        <h2>Shipping Information</h2>
-        <p class="address">{{ order.shippingAddress }}</p>
-        <p class="method"><strong>Method:</strong> {{ order.shippingMethod }}</p>
-      </div>
+      <div class="card order-card">
+        <div class="order-header">
+          <div>
+            <p class="label">Order number</p>
+            <p class="order-number tabular">#{{ order.orderId }}</p>
+          </div>
+          <div class="order-meta">
+            <div>
+              <p class="label">Order date</p>
+              <p>{{ formatDate(order.orderDate) }}</p>
+            </div>
+            <div>
+              <p class="label">Status</p>
+              <span class="pill pill-success">{{ order.status }}</span>
+            </div>
+          </div>
+        </div>
 
-      <div class="section">
-        <h2>Order Items</h2>
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Variant</th>
-              <th class="numeric">Qty</th>
-              <th class="numeric">Unit Price</th>
-              <th class="numeric">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in order.items" :key="item.productId">
-              <td>{{ item.productName }}</td>
-              <td>{{ item.variantName ?? '-' }}</td>
-              <td class="numeric">{{ item.quantity }}</td>
-              <td class="numeric">{{ formatPrice(item.unitPrice) }}</td>
-              <td class="numeric">{{ formatPrice(item.lineTotal) }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="4" class="total-label">Order Total</td>
-              <td class="numeric total-value">{{ formatPrice(order.totalAmount) }}</td>
-            </tr>
-          </tfoot>
-        </table>
+        <div class="section">
+          <h2>Shipping</h2>
+          <p class="address">{{ order.shippingAddress }}</p>
+          <p class="method"><span class="muted">Method:</span> {{ order.shippingMethod }}</p>
+        </div>
+
+        <div class="section">
+          <h2>Items</h2>
+          <table class="table items-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Variant</th>
+                <th class="numeric">Qty</th>
+                <th class="numeric">Unit</th>
+                <th class="numeric">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in order.items" :key="item.productId">
+                <td>{{ item.productName }}</td>
+                <td class="muted">{{ item.variantName ?? '—' }}</td>
+                <td class="numeric tabular">{{ item.quantity }}</td>
+                <td class="numeric tabular">{{ formatPrice(item.unitPrice) }}</td>
+                <td class="numeric tabular">{{ formatPrice(item.lineTotal) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" class="total-label">Order total</td>
+                <td class="numeric total-value tabular">{{ formatPrice(order.totalAmount) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
       <div class="actions">
-        <RouterLink to="/" class="button-link">Continue Shopping</RouterLink>
+        <RouterLink to="/" class="btn btn-primary">Continue shopping</RouterLink>
       </div>
     </div>
   </div>
@@ -95,11 +102,14 @@ onMounted(() => {
   loadOrder()
 })
 
-watch(() => props.orderId, () => {
-  if (authStore.isAuthenticated) {
-    loadOrder()
-  }
-})
+watch(
+  () => props.orderId,
+  () => {
+    if (authStore.isAuthenticated) {
+      loadOrder()
+    }
+  },
+)
 
 async function loadOrder(): Promise<void> {
   const id = typeof props.orderId === 'number' ? props.orderId : parseInt(String(props.orderId), 10)
@@ -115,9 +125,10 @@ async function loadOrder(): Promise<void> {
     order.value = await getOrder(id)
   } catch (e) {
     const status = e && typeof e === 'object' && 'status' in e ? (e as { status?: number }).status : undefined
-    const message = e && typeof e === 'object' && 'message' in e
-      ? String((e as { message?: unknown }).message)
-      : 'Failed to load order.'
+    const message =
+      e && typeof e === 'object' && 'message' in e
+        ? String((e as { message?: unknown }).message)
+        : 'Failed to load order.'
     error.value = status === 404 ? 'Order not found.' : message
   } finally {
     loading.value = false
@@ -136,160 +147,133 @@ function formatDate(value: string): string {
 
 <style scoped>
 .confirmation {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  max-width: 52rem;
+  padding-block: var(--sp-8) var(--sp-9);
 }
 
-.confirmation h1 {
-  margin: 0 0 1.25rem;
-  font-size: 1.75rem;
-  color: #111827;
-}
-
-.status {
-  padding: 2rem;
+.status,
+.error {
   text-align: center;
-  color: #6b7280;
+  padding: var(--sp-9) var(--sp-4);
 }
-
 .status.error {
-  color: #dc2626;
+  color: var(--danger);
+}
+.error h1 {
+  font-size: var(--fs-xl);
+}
+.status-copy {
+  color: var(--muted);
+  margin-block: var(--sp-3) var(--sp-5);
 }
 
+/* Intro ---------------------------------------------------------------- */
+.order-intro {
+  margin-bottom: var(--sp-7);
+}
+.order-intro h1 {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-2xl);
+}
+.lede {
+  margin-top: var(--sp-3);
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+/* Card ----------------------------------------------------------------- */
 .order-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background: #fff;
+  padding: var(--sp-6);
 }
 
 .order-header {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 1rem;
+  gap: var(--sp-5);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-5);
 }
 
 .order-number {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: var(--sp-1);
 }
 
 .order-meta {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--sp-6);
   flex-wrap: wrap;
 }
 
 .label {
-  margin: 0 0 0.2rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #6b7280;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  background: #f3f4f6;
-  border-radius: 9999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #111827;
+  color: var(--muted);
 }
 
 .section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--sp-6);
 }
-
+.section:last-of-type {
+  margin-bottom: 0;
+}
 .section h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
-  color: #374151;
+  font-family: var(--sans);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--sp-3);
 }
-
 .address {
-  margin: 0 0 0.4rem;
-  color: #374151;
-  line-height: 1.5;
+  color: var(--body);
+  line-height: 1.6;
+  margin-bottom: var(--sp-1);
 }
-
 .method {
-  margin: 0;
-  color: #111827;
+  color: var(--ink);
+  font-size: var(--fs-sm);
 }
 
-.items-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
+/* Items table ---------------------------------------------------------- */
+.items-table tfoot td {
+  border-top: 1px solid var(--line-strong);
+  background: var(--paper-soft);
 }
-
-.items-table th,
-.items-table td {
-  padding: 0.6rem 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-}
-
-.items-table th {
-  font-weight: 600;
-  color: #374151;
-}
-
-.items-table td {
-  color: #111827;
-}
-
 .numeric {
   text-align: right;
 }
-
 .total-label {
   text-align: right;
-  font-weight: 700;
+  font-weight: 500;
+  color: var(--ink);
 }
-
 .total-value {
-  font-weight: 700;
-  color: #111827;
+  font-weight: 500;
+  color: var(--ink);
+  font-size: var(--fs-md);
 }
 
 .actions {
-  margin-top: 1.5rem;
-}
-
-.button-link {
-  display: inline-flex;
-  padding: 0.55rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent, var(--accent));
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.9rem;
-  cursor: pointer;
+  margin-top: var(--sp-6);
+  text-align: center;
 }
 
 @media (max-width: 600px) {
   .order-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--sp-4);
   }
-
   .order-meta {
-    gap: 1rem;
-  }
-
-  .items-table {
-    font-size: 0.8rem;
+    gap: var(--sp-5);
   }
 }
 </style>

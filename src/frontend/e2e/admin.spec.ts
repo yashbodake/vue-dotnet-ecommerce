@@ -10,22 +10,25 @@ test.describe('admin operations', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL('/')
 
-    const adminProductsLink = page.getByRole('link', { name: 'Admin: Products' })
+    // Admin nav exposes Products + "Admin orders" links (plus a customer Orders link).
+    const adminProductsLink = page.locator('header .primary-nav a.nav-link', { hasText: 'Products' })
+    const adminOrdersLink = page.locator('header .primary-nav a.nav-link', { hasText: 'Admin orders' })
     await expect(adminProductsLink).toBeVisible()
+    await expect(adminOrdersLink).toBeVisible()
 
     await adminProductsLink.click()
     await expect(page).toHaveURL(/\/admin\/products/)
 
-    const productTable = page.locator('.data-table')
+    const productTable = page.locator('table.table')
     await expect(productTable).toBeVisible()
-    await expect(productTable.locator('tbody tr')).toHaveCountGreaterThan(0)
+    await expect(productTable.locator('tbody tr').first()).toBeVisible()
 
-    await page.goto('/admin/orders')
+    await adminOrdersLink.click()
     await expect(page).toHaveURL(/\/admin\/orders/)
 
-    const orderTable = page.locator('.data-table')
+    const orderTable = page.locator('table.table')
     await expect(orderTable).toBeVisible()
-    await expect(orderTable.locator('tbody tr')).toHaveCountGreaterThan(0)
+    await expect(orderTable.locator('tbody tr').first()).toBeVisible()
 
     const statusDropdowns = page.locator('.status-cell select')
     await expect(statusDropdowns.first()).toBeVisible()

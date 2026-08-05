@@ -1,122 +1,157 @@
 <template>
   <div class="home">
-    <header class="header">
-      <h1>Shop</h1>
-      <p class="subtitle">{{ store.totalCount }} products available</p>
+    <header class="page-header container">
+      <span class="eyebrow">Catalogue</span>
+      <h1>A considered edit of well-made objects.</h1>
+      <p class="lede">{{ store.totalCount }} pieces, sourced and sorted for you.</p>
     </header>
 
-    <section class="filters" aria-label="Product filters">
-      <div class="row">
-        <input
-          class="search"
-          type="search"
-          placeholder="Search products..."
-          :value="store.search"
-          @input="onSearchInput"
-        />
-
-        <select
-          class="sort"
-          :value="store.sortBy"
-          @change="onSortChange"
-          aria-label="Sort by"
-        >
+    <section class="filters container" aria-label="Product filters">
+      <div class="filters-top">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <input
+            class="input search"
+            type="search"
+            placeholder="Search the catalogue…"
+            :value="store.search"
+            @input="onSearchInput"
+            aria-label="Search products"
+          />
+        </div>
+        <select class="select sort" :value="store.sortBy" @change="onSortChange" aria-label="Sort by">
           <option value="newest">Newest</option>
           <option value="name">Name</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
+          <option value="price_asc">Price · low to high</option>
+          <option value="price_desc">Price · high to low</option>
         </select>
-
-        <label class="checkbox">
-          <input
-            type="checkbox"
-            :checked="store.inStockOnly"
-            @change="store.toggleInStockOnly()"
-          />
+        <label class="check stock-toggle">
+          <input type="checkbox" :checked="store.inStockOnly" @change="store.toggleInStockOnly()" />
           In stock only
         </label>
-
-        <button class="reset" type="button" @click="store.resetFilters()">Reset</button>
       </div>
 
-      <div class="row">
-        <label class="price">
-          Min
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            :value="store.minPrice ?? ''"
-            @change="onMinChange"
-            placeholder="0"
-          />
-        </label>
-        <label class="price">
-          Max
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            :value="store.maxPrice ?? ''"
-            @change="onMaxChange"
-            placeholder="any"
-          />
-        </label>
+      <div class="filters-row">
+        <div class="price-group">
+          <label class="price">
+            <span class="price-label">Min</span>
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="0.01"
+              :value="store.minPrice ?? ''"
+              @change="onMinChange"
+              placeholder="0"
+            />
+          </label>
+          <span class="price-sep">—</span>
+          <label class="price">
+            <span class="price-label">Max</span>
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="0.01"
+              :value="store.maxPrice ?? ''"
+              @change="onMaxChange"
+              placeholder="any"
+            />
+          </label>
+        </div>
+        <button
+          v-if="hasActiveFilters"
+          class="btn-link reset"
+          type="button"
+          @click="store.resetFilters()"
+        >
+          Clear all
+        </button>
       </div>
 
-      <fieldset v-if="store.categories.length" class="categories">
-        <legend>Categories</legend>
-        <label v-for="cat in store.categories" :key="cat.categoryId" class="checkbox">
-          <input
-            type="checkbox"
-            :value="cat.categoryId"
-            :checked="store.categoryIds.includes(cat.categoryId)"
-            @change="store.toggleCategory(cat.categoryId)"
-          />
+      <div v-if="store.categories.length" class="categories" role="group" aria-label="Categories">
+        <button
+          v-for="cat in store.categories"
+          :key="cat.categoryId"
+          type="button"
+          class="chip"
+          :aria-pressed="store.categoryIds.includes(cat.categoryId)"
+          :class="{ 'is-active': store.categoryIds.includes(cat.categoryId) }"
+          @click="store.toggleCategory(cat.categoryId)"
+        >
           {{ cat.name }}
-        </label>
-      </fieldset>
+        </button>
+      </div>
     </section>
 
-    <section class="status" v-if="store.loading" aria-live="polite">
-      Loading products...
-    </section>
-    <section class="status error" v-else-if="store.error" aria-live="polite">
-      {{ store.error }}
+    <section v-if="store.loading" class="grid container" aria-label="Loading products" aria-live="polite">
+      <div v-for="n in 12" :key="n" class="skeleton-card" aria-hidden="true">
+        <div class="skeleton thumb"></div>
+        <div class="skeleton line w-70"></div>
+        <div class="skeleton line w-40"></div>
+      </div>
     </section>
 
-    <section v-else class="grid" aria-label="Product grid">
+    <section v-else-if="store.error" class="container status error" aria-live="polite">
+      <p>{{ store.error }}</p>
+    </section>
+
+    <section v-else class="grid container" aria-label="Product grid">
       <ProductCard v-for="p in store.products" :key="p.productId" :product="p" />
-      <p v-if="store.products.length === 0" class="empty">No products match your filters.</p>
+      <p v-if="store.products.length === 0" class="empty">
+        No pieces match these filters. Try clearing them.
+      </p>
     </section>
 
-    <nav class="pagination" v-if="!store.loading && store.totalCount > 0" aria-label="Pagination">
-      <button type="button" :disabled="store.page <= 1" @click="store.setPage(store.page - 1)">
-        Previous
-      </button>
-      <span>Page {{ store.page }} of {{ store.totalPages }}</span>
+    <nav
+      v-if="!store.loading && store.totalCount > 0"
+      class="pagination container"
+      aria-label="Pagination"
+    >
       <button
         type="button"
+        class="btn btn-ghost"
+        :disabled="store.page <= 1"
+        @click="store.setPage(store.page - 1)"
+      >
+        ← Previous
+      </button>
+      <span class="page-of tabular">Page {{ store.page }} of {{ store.totalPages }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
         :disabled="store.page >= store.totalPages"
         @click="store.setPage(store.page + 1)"
       >
-        Next
+        Next →
       </button>
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useCatalogStore } from '../stores/catalog'
 import ProductCard from '../components/ProductCard.vue'
 import type { SortBy } from '../api/catalog'
 
 const store = useCatalogStore()
 
+const hasActiveFilters = computed(
+  () =>
+    !!store.search ||
+    !!store.minPrice ||
+    !!store.maxPrice ||
+    store.inStockOnly ||
+    store.categoryIds.length > 0 ||
+    store.sortBy !== 'newest',
+)
+
 onMounted(() => {
-  store.fetchCategories()
-  store.fetchProducts()
+  void Promise.all([store.fetchCategories(), store.fetchProducts()])
 })
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
@@ -143,153 +178,167 @@ function onMaxChange(e: Event): void {
 
 <style scoped>
 .home {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-.header {
-  margin-bottom: 1rem;
-}
-.header h1 {
-  margin: 0;
-  font-size: 1.9rem;
-  color: var(--text-h);
-}
-.subtitle {
-  margin: 0.25rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  padding-block: var(--sp-8) var(--sp-9);
 }
 
+/* Page header ---------------------------------------------------------- */
+.page-header {
+  margin-bottom: var(--sp-7);
+}
+.page-header h1 {
+  margin-top: var(--sp-3);
+  max-width: 18ch;
+}
+.lede {
+  margin-top: var(--sp-3);
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+/* Filters -------------------------------------------------------------- */
 .filters {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  box-shadow: var(--shadow);
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-7);
 }
-.row {
+.filters-top {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
   align-items: center;
+  gap: var(--sp-3);
+}
+.search-wrap {
+  position: relative;
+  flex: 1 1 280px;
+}
+.search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
 }
 .search {
-  flex: 1 1 240px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  font-size: 0.9rem;
+  padding-left: 2.5rem;
 }
 .sort {
-  padding: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  font-size: 0.9rem;
+  width: auto;
+  min-width: 12rem;
 }
-.checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--text);
+.stock-toggle {
+  margin-left: auto;
 }
-.reset {
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text-h);
+
+.filters-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
 }
-.reset:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.price-group {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
 }
 .price {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
 }
 .price input {
-  width: 90px;
-  padding: 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  font-size: 0.85rem;
+  width: 7rem;
 }
+.price-label {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.price-sep {
+  color: var(--muted);
+  padding-bottom: 0.7rem;
+}
+.reset {
+  font-size: var(--fs-sm);
+  margin-left: auto;
+}
+
 .categories {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  align-items: center;
-  background: var(--bg-soft);
+  gap: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
 }
-.categories legend {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  padding: 0 0.25rem;
+
+/* Grid + skeleton ------------------------------------------------------ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--sp-6) var(--sp-5);
+}
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  padding: var(--sp-9) var(--sp-4);
+  font-size: var(--fs-md);
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.skeleton-card .thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+}
+.line {
+  height: 0.85rem;
+}
+.w-70 {
+  width: 70%;
+}
+.w-40 {
+  width: 40%;
+}
+
+/* Pagination ----------------------------------------------------------- */
+.pagination {
+  margin-top: var(--sp-8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.page-of {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 .status {
-  padding: 2rem;
+  padding: var(--sp-9) var(--sp-4);
   text-align: center;
-  color: var(--text-muted);
 }
 .status.error {
   color: var(--danger);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-}
-.empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: var(--text-muted);
-  padding: 2rem;
-}
-
-.pagination {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-.pagination button {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
-  color: var(--text-h);
-  cursor: pointer;
-}
-.pagination button:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.pagination span {
-  font-size: 0.9rem;
-  color: var(--text);
+@media (max-width: 640px) {
+  .stock-toggle {
+    margin-left: 0;
+  }
+  .page-header h1 {
+    font-size: var(--fs-xl);
+  }
 }
 </style>

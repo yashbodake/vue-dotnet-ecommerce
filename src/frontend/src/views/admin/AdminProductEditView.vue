@@ -1,74 +1,95 @@
 <template>
-  <div class="admin-product-edit">
-    <h1>{{ isEdit ? 'Edit Product' : 'Create Product' }}</h1>
+  <div class="admin container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <RouterLink to="/admin/products" class="crumb">Products</RouterLink>
+      <span class="sep" aria-hidden="true">/</span>
+      <span class="crumb current">{{ isEdit ? 'Edit' : 'New' }}</span>
+    </nav>
 
-    <div v-if="!authStore.isAuthenticated" class="message error">
+    <header class="page-head">
+      <span class="eyebrow">Admin</span>
+      <h1>{{ isEdit ? 'Edit product' : 'New product' }}</h1>
+    </header>
+
+    <div v-if="!authStore.isAuthenticated" class="card message">
       Please <RouterLink to="/login">sign in</RouterLink> to access this page.
     </div>
-    <div v-else-if="!isAdmin" class="message error">Access denied.</div>
-    <div v-else-if="loading" class="message">Loading…</div>
-    <form v-else class="edit-form" @submit.prevent="onSubmit">
-      <label class="field">
-        <span>Name *</span>
-        <input v-model="form.name" type="text" required :disabled="submitting" />
-      </label>
+    <div v-else-if="!isAdmin" class="card message danger">Access denied.</div>
+    <div v-else-if="loading" class="card message">Loading…</div>
 
-      <label class="field">
-        <span>Description</span>
-        <textarea v-model="form.description" rows="4" :disabled="submitting" />
-      </label>
+    <form v-else class="card edit-form" @submit.prevent="onSubmit">
+      <div class="field">
+        <label for="name">Name <span class="req">*</span></label>
+        <input id="name" class="input" v-model="form.name" type="text" required :disabled="submitting" />
+      </div>
 
-      <label class="field">
-        <span>Price *</span>
-        <input
-          v-model.number="form.price"
-          type="number"
-          min="0"
-          step="0.01"
-          required
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          class="textarea"
+          v-model="form.description"
+          rows="4"
           :disabled="submitting"
-        />
-      </label>
+        ></textarea>
+      </div>
 
-      <label class="field">
-        <span>Category *</span>
-        <select v-model.number="form.categoryId" required :disabled="submitting">
+      <div class="field-row">
+        <div class="field">
+          <label for="price">Price <span class="req">*</span></label>
+          <input
+            id="price"
+            class="input tabular"
+            v-model.number="form.price"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            :disabled="submitting"
+          />
+        </div>
+        <div class="field">
+          <label for="stock">Stock <span class="req">*</span></label>
+          <input
+            id="stock"
+            class="input tabular"
+            v-model.number="form.stock"
+            type="number"
+            min="0"
+            step="1"
+            required
+            :disabled="submitting"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="category">Category <span class="req">*</span></label>
+        <select id="category" class="select" v-model.number="form.categoryId" required :disabled="submitting">
           <option disabled value="">Select a category</option>
           <option v-for="cat in categories" :key="cat.categoryId" :value="cat.categoryId">
             {{ cat.name }}
           </option>
         </select>
-      </label>
+      </div>
 
-      <label class="field">
-        <span>Thumbnail URL</span>
-        <input v-model="form.thumbnailUrl" type="url" :disabled="submitting" />
-      </label>
+      <div class="field">
+        <label for="thumb">Thumbnail URL</label>
+        <input id="thumb" class="input" v-model="form.thumbnailUrl" type="url" :disabled="submitting" />
+      </div>
 
-      <label class="field">
-        <span>Stock *</span>
-        <input
-          v-model.number="form.stock"
-          type="number"
-          min="0"
-          step="1"
-          required
-          :disabled="submitting"
-        />
-      </label>
-
-      <label class="field checkbox">
+      <label class="check toggle">
         <input v-model="form.isActive" type="checkbox" :disabled="submitting" />
-        <span>Active</span>
+        Active (visible in catalogue)
       </label>
 
-      <p v-if="error" class="error" role="alert">{{ error }}</p>
+      <p v-if="error" class="pill pill-danger error" role="alert">{{ error }}</p>
 
       <div class="actions">
         <button type="submit" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Saving…' : 'Save' }}
+          {{ submitting ? 'Saving…' : 'Save product' }}
         </button>
-        <button type="button" class="btn" :disabled="submitting" @click="onCancel">
+        <button type="button" class="btn btn-ghost" :disabled="submitting" @click="onCancel">
           Cancel
         </button>
       </div>
@@ -121,11 +142,14 @@ onMounted(() => {
   loadData()
 })
 
-watch(() => authStore.isAuthenticated, (authenticated) => {
-  if (!authenticated) {
-    router.push('/login')
-  }
-})
+watch(
+  () => authStore.isAuthenticated,
+  (authenticated) => {
+    if (!authenticated) {
+      router.push('/login')
+    }
+  },
+)
 
 async function loadData(): Promise<void> {
   loading.value = true
@@ -198,112 +222,72 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <style scoped>
-.admin-product-edit {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 1.5rem;
+.admin {
+  max-width: 42rem;
+  padding-block: var(--sp-7) var(--sp-9);
 }
 
-.admin-product-edit h1 {
-  margin: 0 0 1.5rem;
-  font-size: 1.5rem;
-  color: var(--text-h, #08060d);
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-sm);
+}
+.crumb {
+  color: var(--muted);
+  text-decoration: none;
+}
+.crumb:hover {
+  color: var(--ink);
+}
+.crumb.current {
+  color: var(--ink);
+}
+.sep {
+  color: var(--line-strong);
+}
+
+.page-head {
+  margin-bottom: var(--sp-6);
+}
+.page-head h1 {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xl);
 }
 
 .message {
-  padding: 1rem;
-  border-radius: 0.3rem;
-  background: #f9fafb;
-  color: #374151;
+  padding: var(--sp-5);
+  font-size: var(--fs-sm);
 }
-
-.message.error {
-  background: rgba(220, 38, 38, 0.08);
-  color: #dc2626;
+.message.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
 }
 
 .edit-form {
+  padding: var(--sp-6);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--sp-5);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: #374151;
+.req {
+  color: var(--danger);
 }
 
-.field.checkbox {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.field input,
-.field select,
-.field textarea {
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.3rem;
-  font: inherit;
-  font-size: 0.9rem;
-}
-
-.field input:disabled,
-.field select:disabled,
-.field textarea:disabled {
-  background: #f3f4f6;
+.toggle {
+  font-size: var(--fs-sm);
 }
 
 .error {
-  margin: 0;
-  padding: 0.5rem 0.6rem;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.4);
-  border-radius: 0.3rem;
-  color: #dc2626;
-  font-size: 0.85rem;
+  padding: 0.55rem 0.85rem;
 }
 
 .actions {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.actions .btn {
-  width: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.3rem;
-  background: #fff;
-  color: #374151;
-  font: inherit;
-  cursor: pointer;
-}
-
-.actions .btn:hover:not(:disabled) {
-  background: #f3f4f6;
-}
-
-.actions .btn-primary {
-  background: var(--accent, var(--accent));
-  border-color: var(--accent, var(--accent));
-  color: #fff;
-}
-
-.actions .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-
-.actions .btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
 }
 </style>

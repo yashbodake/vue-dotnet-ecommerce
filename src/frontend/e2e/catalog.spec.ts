@@ -29,7 +29,7 @@ test.describe('catalog browsing', () => {
     await page.getByRole('searchbox', { name: /search/i }).fill('zzzznonexistent')
     await page.waitForTimeout(350)
 
-    await expect(page.locator('.empty')).toContainText('No products match')
+    await expect(page.locator('.empty')).toContainText(/No pieces match|No products match/)
 
     await page.getByRole('searchbox', { name: /search/i }).clear()
     await page.waitForTimeout(350)

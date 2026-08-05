@@ -15,6 +15,16 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/RegisterView.vue'),
+    },
+    {
+      path: '/orders',
+      name: 'my-orders',
+      component: () => import('../views/MyOrdersView.vue'),
+    },
+    {
       path: '/products/:id',
       name: 'product-detail',
       component: () => import('../views/ProductDetailView.vue'),
@@ -61,14 +71,22 @@ const router = createRouter({
     { path: '/Cart', redirect: '/cart' },
     { path: '/Checkout', redirect: '/checkout' },
     { path: '/Account/Login', redirect: '/login' },
-    { path: '/Account/Register', redirect: '/register' },
-    { path: '/Account/Orders', redirect: '/orders' },
     { path: '/Admin/Products', redirect: '/admin/products' },
     { path: '/Admin/Orders', redirect: '/admin/orders' },
     { path: '/Product/:id', redirect: to => `/products/${to.params.id}` },
     { path: '/Product/Detail/:id', redirect: to => `/products/${to.params.id}` },
     { path: '/Home/Index', redirect: '/' },
+    // 404 catch-all
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue'),
+    },
   ],
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0, behavior: 'smooth' }
+  },
 })
 
 export default router

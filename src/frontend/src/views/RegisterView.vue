@@ -2,8 +2,8 @@
   <div class="login-page">
     <div class="login-card card">
       <span class="eyebrow">Account</span>
-      <h1>Welcome back</h1>
-      <p class="lede">Sign in to your Maison account.</p>
+      <h1>Create your account</h1>
+      <p class="lede">Join Maison to check out faster and track orders.</p>
 
       <form class="login-form" @submit.prevent="onSubmit">
         <div class="field">
@@ -14,7 +14,7 @@
             v-model="email"
             type="email"
             name="email"
-            autocomplete="username"
+            autocomplete="email"
             required
             :disabled="submitting"
           />
@@ -28,7 +28,21 @@
             v-model="password"
             type="password"
             name="password"
-            autocomplete="current-password"
+            autocomplete="new-password"
+            required
+            :disabled="submitting"
+          />
+        </div>
+
+        <div class="field">
+          <label for="confirm">Confirm password</label>
+          <input
+            id="confirm"
+            class="input"
+            v-model="confirm"
+            type="password"
+            name="confirm"
+            autocomplete="new-password"
             required
             :disabled="submitting"
           />
@@ -37,18 +51,13 @@
         <p v-if="error" class="pill pill-danger error" role="alert">{{ error }}</p>
 
         <button type="submit" class="btn btn-primary block submit" :disabled="submitting">
-          {{ submitting ? 'Signing in…' : 'Sign in' }}
+          {{ submitting ? 'Creating account…' : 'Create account' }}
         </button>
       </form>
 
       <p class="hint">
-        Demo ·
-        <code class="demo">admin@legacy.local</code> /
-        <code class="demo">Admin123!</code>
-      </p>
-      <p class="hint" style="border-top: none; padding-top: 0; margin-top: var(--sp-3)">
-        No account?
-        <RouterLink to="/register">Create one</RouterLink>
+        Already have an account?
+        <RouterLink to="/login">Sign in</RouterLink>
       </p>
     </div>
   </div>
@@ -65,28 +74,37 @@ const route = useRoute()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 
-// Demo convenience pre-fill.
-const email = ref('admin@legacy.local')
-const password = ref('Admin123!')
+const email = ref('')
+const password = ref('')
+const confirm = ref('')
 const submitting = ref(false)
 const error = ref<string | null>(null)
 
 async function onSubmit(): Promise<void> {
   error.value = null
+
+  if (password.value.length < 8) {
+    error.value = 'Password must be at least 8 characters.'
+    return
+  }
+  if (password.value !== confirm.value) {
+    error.value = 'Passwords do not match.'
+    return
+  }
+
   submitting.value = true
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.register(email.value, password.value)
     await cartStore.mergeOnLogin()
     await cartStore.fetchCart(true)
-    // Honour the ?redirect= param if it points at an internal path; fall back to home.
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirect.startsWith('/') ? redirect : '/')
   } catch (e) {
     const message =
       e && typeof e === 'object' && 'message' in e
         ? String((e as { message?: unknown }).message)
-        : 'Login failed'
-    error.value = message || 'Login failed'
+        : 'Registration failed'
+    error.value = message || 'Registration failed'
   } finally {
     submitting.value = false
   }
@@ -139,12 +157,5 @@ async function onSubmit(): Promise<void> {
   font-size: var(--fs-xs);
   color: var(--muted);
   text-align: center;
-}
-.demo {
-  font-family: var(--sans);
-  color: var(--ink-soft);
-  background: var(--paper-soft);
-  padding: 0.1rem 0.35rem;
-  border-radius: var(--r-sm);
 }
 </style>
